@@ -17,6 +17,28 @@ int tcprot_find_free_pair(struct pair *pair_set, unsigned int pair_count)
 	return -1;
 }
 
+void tcprot_terminate_pair(struct pair *pair)
+{
+	char instr[64];
+	char outstr[64];
+	char *s;
+
+	s = inet_ntoa(pair->in_addr.sin_addr);
+	strcpy(instr, s);
+	s = inet_ntoa(pair->out_addr.sin_addr);
+	strcpy(outstr, s);
+	
+	fprintf(stderr, "terminating in:%s:%d out:%s:%d\n",
+		instr, ntohs(pair->in_addr.sin_port),
+		outstr, ntohs(pair->out_addr.sin_port));
+
+	close(pair->in_sock);
+	pair->in_sock = -1;
+
+	close(pair->out_sock);
+	pair->out_sock = -1;
+}
+
 int tcprot_bind_listen(uint16_t port)
 {
 	int sock;
@@ -83,8 +105,6 @@ int tcprot_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 		goto done;
 	}
 
-	fprintf(stderr, "incoming from %s\n", hostaddrp);
-
 	memset(&pair->out_addr, 0x0, sizeof(pair->out_addr));
 	pair->out_addr.sin_family = AF_INET;
 	if (inet_aton(outhost, &pair->out_addr.sin_addr) == 0) {
@@ -111,7 +131,9 @@ int tcprot_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 		goto done;
 	}
 
-	fprintf(stderr, "outgoing to %s:%d\n", outhost, outport);
+	fprintf(stderr, "%s:%d -> %s:%d\n",
+		hostaddrp, ntohs(pair->in_addr.sin_port),
+		outhost, ntohs(pair->out_addr.sin_port));
 
 done:
 

@@ -15,7 +15,7 @@ tcprot1: tcprot1.o net.o
 tcprot2: tcprot2.o net.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-%.o: $.c
+%.o: %.c $(wildcard *.h)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

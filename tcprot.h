@@ -26,6 +26,8 @@ struct pair {
 };
 
 extern int tcprot_find_free_pair(struct pair *pair_set, unsigned int pair_count);
+extern void tcprot_terminate_pair(struct pair *pair);
+
 extern int tcprot_bind_listen(uint16_t port);
 extern int tcprot_accept(int sock, struct pair *pair,
 			 const char *outhost, uint16_t outport);
