@@ -9,11 +9,14 @@ TARGETS =	tcprot1 tcprot2
 
 default: $(TARGETS)
 
-tcprot1: tcprot1.c
-	$(CC) $(CFLAGS) -o $@ $<
+tcprot1: tcprot1.o net.o
+	$(CC) $(CFLAGS) -o $@ $^
 
-tcprot2: tcprot2.c
-	$(CC) $(CFLAGS) -o $@ $<
+tcprot2: tcprot2.o net.o
+	$(CC) $(CFLAGS) -o $@ $^
+
+%.o: $.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	$(RM) *~ *.o $(TARGETS)

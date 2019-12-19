@@ -1,40 +1,44 @@
-#include <stdio.h>
-#include <error.h>
-#include <errno.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
+/*
+ * tcprot1.c
+ */
 
-#define DEFAULT_INPORT		42020
-#define DEFAULT_OUTPPORT	42021
+#include "tcprot.h"
+
+#define DEFAULT_INPORT		42022
+#define DEFAULT_OUTPORT		42021
+#define DEFAULT_OUTHOST		"localhost"
+
+static int serv_sock = -1;
+
+static void sighandler(int signal)
+{
+	fprintf(stderr, "caught signal %d, exiting\n", signal);
+	exit(0);
+}
+
+static void cleanup(void)
+{
+	close(serv_sock);
+	fprintf(stderr, "goodbye!\n");
+}
 
 int main(int argc, char **argv)
 {
-	int sock;
-	int val;
-	struct sockaddr_in serveraddr;
-	struct sockaddr_in clientaddr;
-	uint16_t serverport = DEFAULT_INPORT;
-	int rval;
+	struct pair pair;
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0)
-		error(sock, errno, "Failed to open socket");
+	signal(SIGINT, sighandler);
+	signal(SIGKILL, sighandler);
+	signal(SIGTERM, sighandler);
+	atexit(cleanup);
 
-	val = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		   (const void *) &val, sizeof(val));
+	serv_sock = tcprot_bind_listen(DEFAULT_INPORT);
+	if (serv_sock < 0) {
+		exit(serv_sock);
+	}
 
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons(serverport);
-
-	rval = bind(sock, (struct sockaddr *) &serveraddr, sizeof(serveraddr));
-	if (rval < 0)
-		error(rval, errno, "Failed in bind");
-
-	rval = listen(sock, 5);
-	if (rval < 0)
-		error(rval, errno, "Failed to listen");
+	for (;;) {
+		tcprot_accept(serv_sock, &pair, DEFAULT_OUTHOST, DEFAULT_OUTPORT);
+	}
 
 	return 0;
 }
