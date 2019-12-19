@@ -47,7 +47,7 @@ void tcptun_fix_hostname(char *hostname)
 
 	hp = gethostbyname(hostname);
 	if (hp) {
-		char *newhostname;
+		char *newhostname = NULL;
 		if (hp->h_addr_list[0] != NULL)
 			newhostname = inet_ntoa(*( struct in_addr *)
 						hp->h_addr_list[0]);
