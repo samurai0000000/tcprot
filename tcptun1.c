@@ -7,7 +7,7 @@
 #include "tcptun.h"
 
 #define DEFAULT_INPORT		42022
-#define DEFAULT_OUTPORT		42021
+#define DEFAULT_OUTPORT		42122
 #define DEFAULT_OUTHOST		"127.0.0.1"
 #define MAX_TUNNELS		16
 
