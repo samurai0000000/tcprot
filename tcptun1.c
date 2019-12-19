@@ -14,6 +14,29 @@
 static int serv_sock = -1;
 static struct pair tunpairs[MAX_TUNNELS];
 static fd_set fdset;
+static int daemonize = 0;
+static int inport = DEFAULT_INPORT;
+static char outhost[128] = DEFAULT_OUTHOST;
+static int outport = DEFAULT_OUTPORT;
+
+static const struct option long_options[] = {
+	{ "daemonize", no_argument, 0, 'd', },
+	{ "inport", required_argument, 0, 'I', },
+	{ "outport", required_argument, 0, 'O', },
+	{ "outhost", required_argument, 0, 'H', },
+	{ 0, 0, 0, 0, },
+};
+
+static void print_help(int argc, char **argv)
+{
+	fprintf(stderr, "Usage: %s [OPTIONS]\n", argv[0]);
+	fprintf(stderr,
+		"	--help		This message\n"
+		"	--daemonize	run as daemon\n"
+		"	--inport  -I	incoming port\n"
+		"	--outport -O	outgoing port\n"
+		"	--outhost -H	outgoing host\n");
+}
 
 static void sighandler(int signal)
 {
@@ -86,6 +109,42 @@ int main(int argc, char **argv)
 	int i, rval;
 	struct timeval timeout;
 
+	while (1) {
+		int option_index = 0;
+		int c = getopt_long(argc, argv, "dI:O:H:",
+				    long_options, &option_index);
+		if (c == -1)
+			break;
+		switch (c) {
+		case 'd':
+			daemonize = 1;
+			break;
+		case 'I':
+			inport = atoi(optarg);
+			break;
+		case 'O':
+			outport = atoi(optarg);
+			break;
+		case 'H':
+			strncpy(outhost, optarg, sizeof(outhost));
+			break;
+		case '?':
+		default:
+			print_help(argc, argv);
+			exit(-1);
+			break;
+		}
+	}
+
+	tcptun_fix_hostname(outhost);
+
+	if (daemonize) {
+		if (daemon(1, 1) != 0) {
+			perror("daemon");
+			exit(-1);
+		}
+	}
+	
 	signal(SIGINT, sighandler);
 	signal(SIGKILL, sighandler);
 	signal(SIGTERM, sighandler);
@@ -96,7 +155,7 @@ int main(int argc, char **argv)
 		tunpairs[i].out_sock = -1;
 	}
 	
-	serv_sock = tcptun_bind_listen(DEFAULT_INPORT);
+	serv_sock = tcptun_bind_listen(inport);
 	if (serv_sock < 0) {
 		exit(serv_sock);
 	}
@@ -120,7 +179,7 @@ int main(int argc, char **argv)
 
 		if (FD_ISSET(serv_sock, &fdset)) {
 			if (tcptun_accept(serv_sock, &pair,
-					  DEFAULT_OUTHOST, DEFAULT_OUTPORT) == 0) {
+					  outhost, outport) == 0) {
 				i = tcptun_find_free_pair(tunpairs, MAX_TUNNELS);
 				if (i < 0 || i >= MAX_TUNNELS) {
 					fprintf(stderr, "no free tunnel left!\n");

@@ -1,4 +1,4 @@
 *.o
 *~
-tcprot1
-tcprot2
+tcptun1
+tcptun2

@@ -30,7 +30,7 @@ void tcptun_terminate_pair(struct pair *pair)
 	s = inet_ntoa(pair->out_addr.sin_addr);
 	strcpy(outstr, s);
 	
-	fprintf(stderr, "terminating in:%s:%d out:%s:%d\n",
+	fprintf(stderr, "terminated %s:%d -> %s:%d\n",
 		instr, ntohs(pair->in_addr.sin_port),
 		outstr, ntohs(pair->out_addr.sin_port));
 
@@ -39,6 +39,21 @@ void tcptun_terminate_pair(struct pair *pair)
 
 	close(pair->out_sock);
 	pair->out_sock = -1;
+}
+
+void tcptun_fix_hostname(char *hostname)
+{
+	struct hostent *hp;
+
+	hp = gethostbyname(hostname);
+	if (hp) {
+		char *newhostname;
+		if (hp->h_addr_list[0] != NULL)
+			newhostname = inet_ntoa(*( struct in_addr *)
+						hp->h_addr_list[0]);
+		if (newhostname)
+			strcpy(hostname, newhostname);
+	}
 }
 
 int tcptun_bind_listen(uint16_t port)
@@ -133,7 +148,7 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 		goto done;
 	}
 
-	fprintf(stderr, "%s:%d -> %s:%d\n",
+	fprintf(stderr, "established %s:%d -> %s:%d\n",
 		hostaddrp, ntohs(pair->in_addr.sin_port),
 		outhost, ntohs(pair->out_addr.sin_port));
 
