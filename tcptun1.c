@@ -1,8 +1,10 @@
 /*
- * tcprot1.c
+ * tcptun1.c
+ *
+ * Copyright (C) 2019, Charles Chiou
  */
 
-#include "tcprot.h"
+#include "tcptun.h"
 
 #define DEFAULT_INPORT		42022
 #define DEFAULT_OUTPORT		42021
@@ -26,7 +28,7 @@ static void cleanup(void)
 	fprintf(stderr, "goodbye!\n");
 }
 
-static void tcprot1_incoming_process(struct pair *pair)
+static void tcptun1_incoming_process(struct pair *pair)
 {
 	char buf[1024];
 	ssize_t size;
@@ -35,7 +37,7 @@ static void tcprot1_incoming_process(struct pair *pair)
 
 	size = read(pair->in_sock, buf, sizeof(buf));
 	if (size <= 0) {
-		tcprot_terminate_pair(pair);
+		tcptun_terminate_pair(pair);
 		return;
 	}
 
@@ -45,14 +47,14 @@ static void tcprot1_incoming_process(struct pair *pair)
 
 	wsize = write(pair->out_sock, buf, size);
 	if (wsize != size) {
-		tcprot_terminate_pair(pair);
+		tcptun_terminate_pair(pair);
 		return;
 	}
 
 	//fprintf(stderr, "-> %d bytes\n", (int) size);
 }
 
-static void tcprot1_outgoing_process(struct pair *pair)
+static void tcptun1_outgoing_process(struct pair *pair)
 {
 	char buf[1024];
 	ssize_t size;
@@ -61,7 +63,7 @@ static void tcprot1_outgoing_process(struct pair *pair)
 
 	size = read(pair->out_sock, buf, sizeof(buf));
 	if (size <= 0) {
-		tcprot_terminate_pair(pair);
+		tcptun_terminate_pair(pair);
 		return;
 	}
 
@@ -71,7 +73,7 @@ static void tcprot1_outgoing_process(struct pair *pair)
 
 	wsize = write(pair->in_sock, buf, size);
 	if (wsize != size) {
-		tcprot_terminate_pair(pair);
+		tcptun_terminate_pair(pair);
 		return;
 	}
 
@@ -94,7 +96,7 @@ int main(int argc, char **argv)
 		tunpairs[i].out_sock = -1;
 	}
 	
-	serv_sock = tcprot_bind_listen(DEFAULT_INPORT);
+	serv_sock = tcptun_bind_listen(DEFAULT_INPORT);
 	if (serv_sock < 0) {
 		exit(serv_sock);
 	}
@@ -117,9 +119,9 @@ int main(int argc, char **argv)
 			continue;
 
 		if (FD_ISSET(serv_sock, &fdset)) {
-			if (tcprot_accept(serv_sock, &pair,
+			if (tcptun_accept(serv_sock, &pair,
 					  DEFAULT_OUTHOST, DEFAULT_OUTPORT) == 0) {
-				i = tcprot_find_free_pair(tunpairs, MAX_TUNNELS);
+				i = tcptun_find_free_pair(tunpairs, MAX_TUNNELS);
 				if (i < 0 || i >= MAX_TUNNELS) {
 					fprintf(stderr, "no free tunnel left!\n");
 					close(pair.in_sock);
@@ -137,11 +139,11 @@ int main(int argc, char **argv)
 		for (i = 0; i < MAX_TUNNELS; i++) {
 			if (tunpairs[i].in_sock >= 0 &&
 			    FD_ISSET(tunpairs[i].in_sock, &fdset)) {
-				tcprot1_incoming_process(&tunpairs[i]);
+				tcptun1_incoming_process(&tunpairs[i]);
 			}
 			if (tunpairs[i].out_sock >= 0 &&
 			    FD_ISSET(tunpairs[i].out_sock, &fdset)) {
-				tcprot1_outgoing_process(&tunpairs[i]);
+				tcptun1_outgoing_process(&tunpairs[i]);
 			}
 		}
 	}

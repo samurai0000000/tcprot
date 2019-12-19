@@ -1,5 +1,7 @@
 /*
- * tcprot.h
+ * tcptun.h
+ *
+ * Copyright (C) 2019, Charles Chiou
  */
 
 #include <stdio.h>
@@ -15,8 +17,8 @@
 #include <signal.h>
 #include <pthread.h>
 
-#ifndef __TCPROT_H__
-#define __TCPROT_H__
+#ifndef __TCPTUN_H__
+#define __TCPTUN_H__
 
 struct pair {
 	int in_sock;
@@ -25,11 +27,11 @@ struct pair {
 	struct sockaddr_in out_addr;
 };
 
-extern int tcprot_find_free_pair(struct pair *pair_set, unsigned int pair_count);
-extern void tcprot_terminate_pair(struct pair *pair);
+extern int tcptun_find_free_pair(struct pair *pair_set, unsigned int pair_count);
+extern void tcptun_terminate_pair(struct pair *pair);
 
-extern int tcprot_bind_listen(uint16_t port);
-extern int tcprot_accept(int sock, struct pair *pair,
+extern int tcptun_bind_listen(uint16_t port);
+extern int tcptun_accept(int sock, struct pair *pair,
 			 const char *outhost, uint16_t outport);
 
 #endif

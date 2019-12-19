@@ -1,10 +1,12 @@
 /*
  * net.c
+ *
+ * Copyright (C) 2019, Charles Chiou
  */
 
-#include "tcprot.h"
+#include "tcptun.h"
 
-int tcprot_find_free_pair(struct pair *pair_set, unsigned int pair_count)
+int tcptun_find_free_pair(struct pair *pair_set, unsigned int pair_count)
 {
 	int i = 0;
 
@@ -17,7 +19,7 @@ int tcprot_find_free_pair(struct pair *pair_set, unsigned int pair_count)
 	return -1;
 }
 
-void tcprot_terminate_pair(struct pair *pair)
+void tcptun_terminate_pair(struct pair *pair)
 {
 	char instr[64];
 	char outstr[64];
@@ -39,7 +41,7 @@ void tcprot_terminate_pair(struct pair *pair)
 	pair->out_sock = -1;
 }
 
-int tcprot_bind_listen(uint16_t port)
+int tcptun_bind_listen(uint16_t port)
 {
 	int sock;
 	int val, rval;
@@ -81,7 +83,7 @@ done:
 	return sock;
 }
 
-int tcprot_accept(int sock, struct pair *pair, const char *outhost, uint16_t outport)
+int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t outport)
 {
 	char *hostaddrp;
 	socklen_t len;
