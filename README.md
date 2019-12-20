@@ -7,13 +7,14 @@ Deployment:
 	- Place TUN1 on ssh client side
 	- Place TUN2 on ssh server side
 	- TUN1 connects to TUN2 and tunneled traffic are transformed
-
+<pre>
   +-------+       +----+                   +----+     +------ +
   |  SSH  + --->  |TUN1| -->  DPI FW   --> |TUN2| --> |  SSH  |
   | Client|       |    |                   |    |     | Server|
   +-------+       +----+                   +----+     +-------+
 
   ports:           42022                    42021           22
+</pre>
 
 TODO:
 	- Custom nyte stream transformation as need arise
