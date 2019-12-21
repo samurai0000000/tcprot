@@ -12,7 +12,7 @@ Deployment:
   | Client|       |    |                   |    |     | Server|
   +-------+       +----+                   +----+     +-------+
 
-  ports:           42022                    42021           22
+  ports:           42022                    42122           22
 
 TODO:
 	- Custom nyte stream transformation as need arise
