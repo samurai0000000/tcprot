@@ -25,6 +25,8 @@ struct pair {
 	struct sockaddr_in in_addr;
 	int out_sock;
 	struct sockaddr_in out_addr;
+	uint64_t inbytes;	// for statistics
+	uint64_t outbytes;	// for statistics
 };
 
 extern int tcptun_find_free_pair(struct pair *pair_set, unsigned int pair_count);

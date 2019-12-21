@@ -64,6 +64,8 @@ static void tcptun1_incoming_process(struct pair *pair)
 		return;
 	}
 
+	pair->inbytes += size;
+
 	for (i = 0; i < size; i++) {
 		buf[i] ^= 0x55;
 	}
@@ -74,7 +76,7 @@ static void tcptun1_incoming_process(struct pair *pair)
 		return;
 	}
 
-	//fprintf(stderr, "-> %d bytes\n", (int) size);
+	pair->outbytes += size;
 }
 
 static void tcptun1_outgoing_process(struct pair *pair)
@@ -90,6 +92,8 @@ static void tcptun1_outgoing_process(struct pair *pair)
 		return;
 	}
 
+	pair->inbytes += size;
+
 	for (i = 0; i < size; i++) {
 		buf[i] ^= 0x55;
 	}
@@ -100,7 +104,7 @@ static void tcptun1_outgoing_process(struct pair *pair)
 		return;
 	}
 
-	//fprintf(stderr, "<- %d bytes\n", (int) size);
+	pair->outbytes += size;
 }
 
 int main(int argc, char **argv)
@@ -149,6 +153,7 @@ int main(int argc, char **argv)
 	signal(SIGKILL, sighandler);
 	signal(SIGTERM, sighandler);
 	atexit(cleanup);
+	//fprintf(stderr, "-> %d bytes\n", (int) size);
 
 	for (i = 0; i < MAX_TUNNELS; i++) {
 		tunpairs[i].in_sock = -1;
