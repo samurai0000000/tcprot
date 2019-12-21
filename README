@@ -1,5 +1,4 @@
-This software is designed as a simple measure to obfusticate data and bypass
-DPI firewalls. This is effective against ones that monitor TCP traffic
+This is a simple measure to tunnel through DPI engines that monitor TCP traffic
 and drop connections that contain ssh protocol headers. A simple (and low in
 computational overhead) byte level transformation is sufficient in most cases.
 

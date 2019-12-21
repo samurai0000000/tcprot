@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 				FD_SET(tunpairs[i].out_sock, &fdset);
 		}
 
-		timeout.tv_sec = 5;
+		timeout.tv_sec = 1;
 		timeout.tv_usec = 0;
 		rval = select(FD_SETSIZE, &fdset, NULL, NULL, &timeout);
 		if (rval <= 0)
