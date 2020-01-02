@@ -140,8 +140,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	tcptun_fix_hostname(outhost);
-
 	if (daemonize) {
 		if (daemon(1, 1) != 0) {
 			perror("daemon");

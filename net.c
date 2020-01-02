@@ -41,7 +41,7 @@ void tcptun_terminate_pair(struct pair *pair)
 	pair->out_sock = -1;
 }
 
-void tcptun_fix_hostname(char *hostname)
+static void tcptun_nslookup(char *newname, const char *hostname)
 {
 	struct hostent *hp;
 
@@ -51,9 +51,13 @@ void tcptun_fix_hostname(char *hostname)
 		if (hp->h_addr_list[0] != NULL)
 			newhostname = inet_ntoa(*( struct in_addr *)
 						hp->h_addr_list[0]);
-		if (newhostname)
-			strcpy(hostname, newhostname);
+		if (newhostname) {
+			strcpy(newname, newhostname);
+			return;
+		}
 	}
+
+	strcpy(newname, hostname);
 }
 
 int tcptun_bind_listen(uint16_t port)
@@ -100,6 +104,7 @@ done:
 
 int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t outport)
 {
+	char hostname[128];
 	char *hostaddrp;
 	socklen_t len;
 
@@ -122,10 +127,12 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 		goto done;
 	}
 
+	tcptun_nslookup(hostname, outhost);
+
 	memset(&pair->out_addr, 0x0, sizeof(pair->out_addr));
 	pair->out_addr.sin_family = AF_INET;
-	if (inet_aton(outhost, &pair->out_addr.sin_addr) == 0) {
-		fprintf(stderr, "invalid outgoing host '%s'\n", outhost);
+	if (inet_aton(hostname, &pair->out_addr.sin_addr) == 0) {
+		fprintf(stderr, "invalid outgoing host '%s'\n", hostname);
 		goto done;
 	}
 	
@@ -136,13 +143,13 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 		goto done;
 	}
 
-	pair->out_addr.sin_addr.s_addr = inet_addr(outhost);
+	pair->out_addr.sin_addr.s_addr = inet_addr(hostname);
 	pair->out_addr.sin_port = htons(outport);
 
 	if (connect(pair->out_sock, (const struct sockaddr *) &pair->out_addr,
 		    sizeof(pair->out_addr)) != 0) {
 		perror("connect");
-		fprintf(stderr, "outgoing to %s:%d failed!\n", outhost, outport);
+		fprintf(stderr, "outgoing to %s:%d failed!\n", hostname, outport);
 		close(pair->out_sock);
 		pair->out_sock = -1;
 		goto done;
@@ -150,7 +157,7 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 
 	fprintf(stderr, "established %s:%d -> %s:%d\n",
 		hostaddrp, ntohs(pair->in_addr.sin_port),
-		outhost, ntohs(pair->out_addr.sin_port));
+		hostname, ntohs(pair->out_addr.sin_port));
 
 done:
 
