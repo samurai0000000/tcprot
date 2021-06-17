@@ -107,6 +107,7 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 	char hostname[128];
 	char *hostaddrp;
 	socklen_t len;
+	int val;
 
 	pair->in_sock = -1;
 	pair->out_sock = -1;
@@ -142,6 +143,9 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 		fprintf(stderr, "failed in socket()!\n");
 		goto done;
 	}
+
+	val = 1;
+	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const void *) &val, sizeof(val));
 
 	pair->out_addr.sin_addr.s_addr = inet_addr(hostname);
 	pair->out_addr.sin_port = htons(outport);

@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 			outport = atoi(optarg);
 			break;
 		case 'H':
-			strncpy(outhost, optarg, sizeof(outhost));
+			strncpy(outhost, optarg, sizeof(outhost) - 1);
 			break;
 		case '?':
 		default:

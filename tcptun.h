@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <string.h>
