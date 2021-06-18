@@ -8,176 +8,186 @@
 
 int tcptun_find_free_pair(struct pair *pair_set, unsigned int pair_count)
 {
-	int i = 0;
+    int i = 0;
 
-	for (i = 0; i < pair_count; i++) {
-		if (pair_set[i].in_sock < 0 &&
-		    pair_set[i].out_sock < 0)
-			return i;
-	}
+    for (i = 0; i < pair_count; i++) {
+        if (pair_set[i].in_sock < 0 &&
+            pair_set[i].out_sock < 0)
+            return i;
+    }
 
-	return -1;
+    return -1;
 }
 
 void tcptun_terminate_pair(struct pair *pair)
 {
-	char instr[64];
-	char outstr[64];
-	char *s;
+    char instr[64];
+    char outstr[64];
+    char *s;
 
-	s = inet_ntoa(pair->in_addr.sin_addr);
-	strcpy(instr, s);
-	s = inet_ntoa(pair->out_addr.sin_addr);
-	strcpy(outstr, s);
-	
-	fprintf(stderr, "terminated %s:%d -> %s:%d\n",
-		instr, ntohs(pair->in_addr.sin_port),
-		outstr, ntohs(pair->out_addr.sin_port));
+    s = inet_ntoa(pair->in_addr.sin_addr);
+    strcpy(instr, s);
+    s = inet_ntoa(pair->out_addr.sin_addr);
+    strcpy(outstr, s);
 
-	close(pair->in_sock);
-	pair->in_sock = -1;
+    fprintf(stderr, "terminated %s:%d -> %s:%d\n",
+            instr, ntohs(pair->in_addr.sin_port),
+            outstr, ntohs(pair->out_addr.sin_port));
 
-	close(pair->out_sock);
-	pair->out_sock = -1;
+    close(pair->in_sock);
+    pair->in_sock = -1;
+
+    close(pair->out_sock);
+    pair->out_sock = -1;
 }
 
 static void tcptun_nslookup(char *newname, const char *hostname)
 {
-	struct hostent *hp;
+    struct hostent *hp;
 
-	hp = gethostbyname(hostname);
-	if (hp) {
-		char *newhostname = NULL;
-		if (hp->h_addr_list[0] != NULL)
-			newhostname = inet_ntoa(*( struct in_addr *)
-						hp->h_addr_list[0]);
-		if (newhostname) {
-			strcpy(newname, newhostname);
-			return;
-		}
-	}
+    hp = gethostbyname(hostname);
+    if (hp) {
+        char *newhostname = NULL;
+        if (hp->h_addr_list[0] != NULL)
+            newhostname = inet_ntoa(*( struct in_addr *)
+                                    hp->h_addr_list[0]);
+        if (newhostname) {
+            strcpy(newname, newhostname);
+            return;
+        }
+    }
 
-	strcpy(newname, hostname);
+    strcpy(newname, hostname);
 }
 
 int tcptun_bind_listen(uint16_t port)
 {
-	int sock;
-	int val, rval;
-	struct sockaddr_in serveraddr;
+    int sock;
+    int val, rval;
+    struct sockaddr_in serveraddr;
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock < 0) {
-		fprintf(stderr, "failed to create socket\n");
-		goto done;
-	}
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        fprintf(stderr, "failed to create socket\n");
+        goto done;
+    }
 
-	val = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &val, sizeof(val));
+    val = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &val, sizeof(val));
 
-	serveraddr.sin_family = AF_INET;
-	serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serveraddr.sin_port = htons(port);
+    serveraddr.sin_family = AF_INET;
+    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serveraddr.sin_port = htons(port);
 
-	rval = bind(sock, (struct sockaddr *) &serveraddr, sizeof(serveraddr));
-	if (rval < 0) {
-		fprintf(stderr, "failed in bind(%d)\n", port);
-		close(sock);
-		sock = -1;
-		goto done;
-	}
+    rval = bind(sock, (struct sockaddr *) &serveraddr, sizeof(serveraddr));
+    if (rval < 0) {
+        fprintf(stderr, "failed in bind(%d)\n", port);
+        close(sock);
+        sock = -1;
+        goto done;
+    }
 
-	rval = listen(sock, 5);
-	if (rval < 0) {
-		fprintf(stderr, "failed in listen()\n");
-		close(sock);
-		sock = -1;
-		goto done;
-	}
+    rval = listen(sock, 5);
+    if (rval < 0) {
+        fprintf(stderr, "failed in listen()\n");
+        close(sock);
+        sock = -1;
+        goto done;
+    }
 
-	fprintf(stderr, "listening to %d\n", port);
+    fprintf(stderr, "listening to %d\n", port);
 
 done:
 
-	return sock;
+    return sock;
 }
 
 int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t outport)
 {
-	char hostname[128];
-	char *hostaddrp;
-	socklen_t len;
-	int val;
+    char hostname[128];
+    char *hostaddrp;
+    socklen_t len;
+    int val;
 
-	pair->in_sock = -1;
-	pair->out_sock = -1;
+    pair->in_sock = -1;
+    pair->out_sock = -1;
 
-	/* Accept an incoming socket connection */
-	len = sizeof(pair->in_addr);
-	pair->in_sock = accept(sock, (struct sockaddr *) &pair->in_addr, &len);
-	if (pair->in_sock < 0) {
-		fprintf(stderr, "failed in accept()!\n");
-		goto done;
-	}
+/* Accept an incoming socket connection */
+    len = sizeof(pair->in_addr);
+    pair->in_sock = accept(sock, (struct sockaddr *) &pair->in_addr, &len);
+    if (pair->in_sock < 0) {
+        fprintf(stderr, "failed in accept()!\n");
+        goto done;
+    }
 
-	hostaddrp = inet_ntoa(pair->in_addr.sin_addr);
-	if (hostaddrp == NULL) {
-		fprintf(stderr, "failed in inet_ntoa()!\n");
-		close(pair->in_sock);
-		pair->in_sock = -1;
-		goto done;
-	}
+    hostaddrp = inet_ntoa(pair->in_addr.sin_addr);
+    if (hostaddrp == NULL) {
+        fprintf(stderr, "failed in inet_ntoa()!\n");
+        close(pair->in_sock);
+        pair->in_sock = -1;
+        goto done;
+    }
 
-	tcptun_nslookup(hostname, outhost);
+    tcptun_nslookup(hostname, outhost);
 
-	memset(&pair->out_addr, 0x0, sizeof(pair->out_addr));
-	pair->out_addr.sin_family = AF_INET;
-	if (inet_aton(hostname, &pair->out_addr.sin_addr) == 0) {
-		fprintf(stderr, "invalid outgoing host '%s'\n", hostname);
-		goto done;
-	}
-	
-	/* Make an outgoing socket connection */
-	pair->out_sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (pair->out_sock < 0) {
-		fprintf(stderr, "failed in socket()!\n");
-		goto done;
-	}
+    memset(&pair->out_addr, 0x0, sizeof(pair->out_addr));
+    pair->out_addr.sin_family = AF_INET;
+    if (inet_aton(hostname, &pair->out_addr.sin_addr) == 0) {
+        fprintf(stderr, "invalid outgoing host '%s'\n", hostname);
+        goto done;
+    }
 
-	val = 1;
-	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const void *) &val, sizeof(val));
+/* Make an outgoing socket connection */
+    pair->out_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (pair->out_sock < 0) {
+        fprintf(stderr, "failed in socket()!\n");
+        goto done;
+    }
 
-	pair->out_addr.sin_addr.s_addr = inet_addr(hostname);
-	pair->out_addr.sin_port = htons(outport);
+    val = 1;
+    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const void *) &val, sizeof(val));
 
-	if (connect(pair->out_sock, (const struct sockaddr *) &pair->out_addr,
-		    sizeof(pair->out_addr)) != 0) {
-		perror("connect");
-		fprintf(stderr, "outgoing to %s:%d failed!\n", hostname, outport);
-		close(pair->out_sock);
-		pair->out_sock = -1;
-		goto done;
-	}
+    pair->out_addr.sin_addr.s_addr = inet_addr(hostname);
+    pair->out_addr.sin_port = htons(outport);
 
-	fprintf(stderr, "established %s:%d -> %s:%d\n",
-		hostaddrp, ntohs(pair->in_addr.sin_port),
-		hostname, ntohs(pair->out_addr.sin_port));
+    if (connect(pair->out_sock, (const struct sockaddr *) &pair->out_addr,
+                sizeof(pair->out_addr)) != 0) {
+        perror("connect");
+        fprintf(stderr, "outgoing to %s:%d failed!\n", hostname, outport);
+        close(pair->out_sock);
+        pair->out_sock = -1;
+        goto done;
+    }
+
+    fprintf(stderr, "established %s:%d -> %s:%d\n",
+            hostaddrp, ntohs(pair->in_addr.sin_port),
+            hostname, ntohs(pair->out_addr.sin_port));
 
 done:
 
-	if (pair->in_sock >= 0 && pair->out_sock >= 0) {
-		return 0;
-	}
+    if (pair->in_sock >= 0 && pair->out_sock >= 0) {
+        return 0;
+    }
 
-	if (pair->in_sock >= 0) {
-		close(pair->in_sock);
-		pair->in_sock = -1;
-	}
+    if (pair->in_sock >= 0) {
+        close(pair->in_sock);
+        pair->in_sock = -1;
+    }
 
-	if (pair->out_sock >= 0) {
-		close(pair->out_sock);
-		pair->out_sock = -1;
-	}
+    if (pair->out_sock >= 0) {
+        close(pair->out_sock);
+        pair->out_sock = -1;
+    }
 
-	return -1;
+    return -1;
 }
+
+/*
+ * Local variables:
+ * mode: C
+ * c-file-style: "BSD"
+ * c-basic-offset: 4
+ * tab-width: 4
+ * indent-tabs-mode: nil
+ * End:
+ */
