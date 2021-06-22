@@ -53,7 +53,7 @@ static void cleanup(void)
 
 static void tcptun2_incoming_process(struct pair *pair)
 {
-    char buf[1024];
+    char buf[1024 * 16];
     ssize_t size;
     ssize_t wsize;
     int i;
@@ -81,7 +81,7 @@ static void tcptun2_incoming_process(struct pair *pair)
 
 static void tcptun2_outgoing_process(struct pair *pair)
 {
-    char buf[1024];
+    char buf[1024 * 16];
     ssize_t size;
     ssize_t wsize;
     int i;

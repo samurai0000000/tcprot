@@ -148,7 +148,8 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
     }
 
     val = 1;
-    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const void *) &val, sizeof(val));
+    setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &val, sizeof(val));
+    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val));
 
     pair->out_addr.sin_addr.s_addr = inet_addr(hostname);
     pair->out_addr.sin_port = htons(outport);
