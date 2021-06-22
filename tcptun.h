@@ -17,6 +17,7 @@
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
+#include <ncurses.h>
 
 #ifndef __TCPTUN_H__
 #define __TCPTUN_H__

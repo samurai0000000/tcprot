@@ -73,7 +73,7 @@ int tcptun_bind_listen(uint16_t port)
     }
 
     val = 1;
-    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &val, sizeof(val));
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
 
     serveraddr.sin_family = AF_INET;
     serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);

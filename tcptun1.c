@@ -20,6 +20,7 @@ static char outhost[128] = DEFAULT_OUTHOST;
 static int outport = DEFAULT_OUTPORT;
 
 static const struct option long_options[] = {
+    { "help", no_argument, 0, 'h', },
     { "daemonize", no_argument, 0, 'd', },
     { "inport", required_argument, 0, 'I', },
     { "outport", required_argument, 0, 'O', },
@@ -31,11 +32,11 @@ static void print_help(int argc, char **argv)
 {
     fprintf(stderr, "Usage: %s [OPTIONS]\n", argv[0]);
     fprintf(stderr,
-            "	--help		This message\n"
-            "	--daemonize	run as daemon\n"
-            "	--inport  -I	incoming port\n"
-            "	--outport -O	outgoing port\n"
-            "	--outhost -H	outgoing host\n");
+            "	--help, -h      This message\n"
+            "	--daemonize,-d  run as daemon\n"
+            "	--inport,-I     incoming port\n"
+            "	--outport,-O    outgoing port\n"
+            "	--outhost,-H    outgoing host\n");
 }
 
 static void sighandler(int signal)
@@ -48,7 +49,10 @@ static void cleanup(void)
 {
     close(serv_sock);
     serv_sock = -1;
-    fprintf(stderr, "goodbye!\n");
+    if (daemonize)
+        fprintf(stderr, "goodbye!\n");
+    else
+        endwin();
 }
 
 static void tcptun1_incoming_process(struct pair *pair)
@@ -135,7 +139,7 @@ int main(int argc, char **argv)
         case '?':
         default:
             print_help(argc, argv);
-            exit(-1);
+            exit(EXIT_FAILURE);
             break;
         }
     }
@@ -143,7 +147,7 @@ int main(int argc, char **argv)
     if (daemonize) {
         if (daemon(1, 1) != 0) {
             perror("daemon");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
     }
 
@@ -151,7 +155,6 @@ int main(int argc, char **argv)
     signal(SIGKILL, sighandler);
     signal(SIGTERM, sighandler);
     atexit(cleanup);
-//fprintf(stderr, "-> %d bytes\n", (int) size);
 
     for (i = 0; i < MAX_TUNNELS; i++) {
         tunpairs[i].in_sock = -1;
@@ -160,9 +163,12 @@ int main(int argc, char **argv)
 
     serv_sock = tcptun_bind_listen(inport);
     if (serv_sock < 0) {
-        exit(serv_sock);
+        exit(EXIT_FAILURE);
     }
 
+    if (daemonize == 0) {
+        initscr();
+    }
 
     while (serv_sock >= 0) {
         FD_ZERO(&fdset);
