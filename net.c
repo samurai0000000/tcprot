@@ -30,7 +30,7 @@ void tcptun_terminate_pair(struct pair *pair)
     s = inet_ntoa(pair->out_addr.sin_addr);
     strcpy(outstr, s);
 
-    fprintf(stderr, "terminated %s:%d -> %s:%d\n",
+    fprintf(stderr, "terminated  %s:%d -> %s:%d\n",
             instr, ntohs(pair->in_addr.sin_port),
             outstr, ntohs(pair->out_addr.sin_port));
 
@@ -106,13 +106,14 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 {
     char hostname[128];
     char *hostaddrp;
+    char instr[64];
     socklen_t len;
     int val;
 
     pair->in_sock = -1;
     pair->out_sock = -1;
 
-/* Accept an incoming socket connection */
+	/* Accept an incoming socket connection */
     len = sizeof(pair->in_addr);
     pair->in_sock = accept(sock, (struct sockaddr *) &pair->in_addr, &len);
     if (pair->in_sock < 0) {
@@ -126,6 +127,8 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
         close(pair->in_sock);
         pair->in_sock = -1;
         goto done;
+    } else {
+        strcpy(instr, hostaddrp);
     }
 
     tcptun_nslookup(hostname, outhost);
@@ -137,7 +140,7 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
         goto done;
     }
 
-/* Make an outgoing socket connection */
+    /* Make an outgoing socket connection */
     pair->out_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (pair->out_sock < 0) {
         fprintf(stderr, "failed in socket()!\n");
@@ -160,7 +163,7 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
     }
 
     fprintf(stderr, "established %s:%d -> %s:%d\n",
-            hostaddrp, ntohs(pair->in_addr.sin_port),
+            instr, ntohs(pair->in_addr.sin_port),
             hostname, ntohs(pair->out_addr.sin_port));
 
 done:
