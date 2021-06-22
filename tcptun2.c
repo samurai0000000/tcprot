@@ -80,8 +80,6 @@ static void tcptun2_incoming_process(struct pair *pair)
         goto done;
     }
 
-    pair->outbytes += size;
-
 done:
 
     if (daemonize == 0) {
@@ -103,8 +101,6 @@ static void tcptun2_outgoing_process(struct pair *pair)
         tcptun_terminate_pair(pair);
         goto done;
     }
-
-    pair->inbytes += size;
 
     for (i = 0; i < size; i++) {
         buf[i] ^= 0x55;
