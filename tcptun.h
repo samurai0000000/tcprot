@@ -31,14 +31,13 @@ struct pair {
     uint64_t outbytes;	// for statistics
 };
 
-extern int tcptun_find_free_pair(struct pair *pair_set, unsigned int pair_count);
+extern int tcptun_find_free_pair(struct pair *pair_set,
+                                 unsigned int pair_count);
 extern void tcptun_terminate_pair(struct pair *pair);
 extern int tcptun_bind_listen(uint16_t port);
 extern int tcptun_accept(int sock, struct pair *pair,
                          const char *outhost, uint16_t outport);
-
-struct tcptunstat {
-};
+extern void nc_refresh(const struct pair pairs[], unsigned int npairs);
 
 #endif
 

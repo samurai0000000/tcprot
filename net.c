@@ -112,6 +112,8 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 
     pair->in_sock = -1;
     pair->out_sock = -1;
+    pair->inbytes = 0;
+    pair->outbytes = 0;
 
 	/* Accept an incoming socket connection */
     len = sizeof(pair->in_addr);
