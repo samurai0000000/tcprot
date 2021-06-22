@@ -17,6 +17,8 @@
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
+#include <sys/time.h>
+#include <libgen.h>
 #include <ncurses.h>
 
 #ifndef __TCPTUN_H__
@@ -27,6 +29,7 @@ struct pair {
     struct sockaddr_in in_addr;
     int out_sock;
     struct sockaddr_in out_addr;
+    time_t tod_sec;     // for statistics
     uint64_t inbytes;	// for statistics
     uint64_t outbytes;	// for statistics
 };
@@ -37,6 +40,7 @@ extern void tcptun_terminate_pair(struct pair *pair);
 extern int tcptun_bind_listen(uint16_t port);
 extern int tcptun_accept(int sock, struct pair *pair,
                          const char *outhost, uint16_t outport);
+extern void nc_set_title(const char *title);
 extern void nc_refresh(const struct pair pairs[], unsigned int npairs);
 
 #endif

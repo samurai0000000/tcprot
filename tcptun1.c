@@ -183,10 +183,19 @@ int main(int argc, char **argv)
     }
 
     if (daemonize == 0) {
+        char title[256];
         initscr();
+        snprintf(title, sizeof(title) - 1,
+                 "%s %d:%s:%d", basename(argv[0]), inport, outhost, outport);
+        nc_set_title(title);
+        nc_refresh(NULL, 0);
     }
 
     while (serv_sock >= 0) {
+        if (daemonize == 0) {
+            nc_refresh(tunpairs, MAX_TUNNELS);
+        }
+
         FD_ZERO(&fdset);
         FD_SET(serv_sock, &fdset);
         for (i = 0; i < MAX_TUNNELS; i++) {
@@ -199,8 +208,9 @@ int main(int argc, char **argv)
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
         rval = select(FD_SETSIZE, &fdset, NULL, NULL, &timeout);
-        if (rval <= 0)
+        if (rval <= 0) {
             continue;
+        }
 
         if (FD_ISSET(serv_sock, &fdset)) {
             if (tcptun_accept(serv_sock, &pair,

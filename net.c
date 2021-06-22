@@ -109,9 +109,13 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
     char instr[64];
     socklen_t len;
     int val;
+    struct timeval timeval;
+
+    gettimeofday(&timeval, NULL);
 
     pair->in_sock = -1;
     pair->out_sock = -1;
+    pair->tod_sec = timeval.tv_sec;
     pair->inbytes = 0;
     pair->outbytes = 0;
 
