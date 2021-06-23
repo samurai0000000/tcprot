@@ -42,9 +42,11 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
         secs = conntime % 60;
         if (conntime > 60) {
             mins = conntime / 60;
+            mins %= 60;
         }
         if (conntime > 3600) {
             hours = conntime / 3600;
+            hours %= 60;
         }
         if (conntime > 86400) {
             days = conntime / 86400;
