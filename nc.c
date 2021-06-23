@@ -43,11 +43,11 @@ static char nc_instatus_code(uint8_t status)
     char c = '?';
 
     switch (status) {
-    case 0: c = '_'; break;
-    case 1: c = 'r'; break;
-    case 2: c = 'R'; break;
-    case 3: c = 'o'; break;
-    case 4: c = 'O'; break;
+    case 0: c = '-'; break;
+    case 1: c = 'a'; break;
+    case 2: c = 'b'; break;
+    case 3: c = 'c'; break;
+    case 4: c = 'd'; break;
     default: break;
     }
 
@@ -59,11 +59,11 @@ static char nc_outstatus_code(uint8_t status)
     char c = '?';
 
     switch (status) {
-    case 0: c = '_'; break;
-    case 1: c = 'g'; break;
-    case 2: c = 'G'; break;
-    case 3: c = 'w'; break;
-    case 4: c = 'W'; break;
+    case 0: c = '-'; break;
+    case 1: c = 'e'; break;
+    case 2: c = 'f'; break;
+    case 3: c = 'g'; break;
+    case 4: c = 'h'; break;
     default: break;
     }
 
@@ -77,6 +77,9 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
     char instr[64];
     struct timeval timeval;
     time_t conntime = 0, secs = 0, mins = 0, hours = 0, days = 0;
+
+    if (G_ncinit == 0)
+        return;
 
     gettimeofday(&timeval, NULL);
 

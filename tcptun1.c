@@ -57,7 +57,7 @@ static void cleanup(void)
 
 static void tcptun1_incoming_process(struct pair *pair)
 {
-    char buf[1024];
+    char buf[1024 * 16];
     ssize_t size;
     ssize_t wsize;
     int i;
@@ -65,7 +65,10 @@ static void tcptun1_incoming_process(struct pair *pair)
     pair->instatus = 1;
     size = read(pair->in_sock, buf, sizeof(buf));
     pair->instatus = 2;
-    if (size <= 0) {
+    if (size == 0) {
+        goto done;
+    } else if (size < 0) {
+        nc_log("broken incoming read %d\n", size);
         tcptun_terminate_pair(pair);
         goto done;
     }
@@ -80,6 +83,7 @@ static void tcptun1_incoming_process(struct pair *pair)
     wsize = write(pair->out_sock, buf, size);
     pair->instatus = 4;
     if (wsize != size) {
+        nc_log("broken incoming write %d != %d\n", wsize, size);
         tcptun_terminate_pair(pair);
         goto done;
     }
@@ -96,7 +100,7 @@ done:
 
 static void tcptun1_outgoing_process(struct pair *pair)
 {
-    char buf[1024];
+    char buf[1024 * 16];
     ssize_t size;
     ssize_t wsize;
     int i;
@@ -104,7 +108,10 @@ static void tcptun1_outgoing_process(struct pair *pair)
     pair->outstatus = 1;
     size = read(pair->out_sock, buf, sizeof(buf));
     pair->outstatus = 2;
-    if (size <= 0) {
+    if (size == 0) {
+        goto done;
+    } else if (size < 0) {
+        nc_log("broken outgoing read %d\n", size);
         tcptun_terminate_pair(pair);
         goto done;
     }
@@ -117,6 +124,7 @@ static void tcptun1_outgoing_process(struct pair *pair)
     wsize = write(pair->in_sock, buf, size);
     pair->outstatus = 4;
     if (wsize != size) {
+        nc_log("broken outgoing write %d != %d\n", wsize, size);
         tcptun_terminate_pair(pair);
         goto done;
     }
@@ -183,6 +191,7 @@ int main(int argc, char **argv)
     signal(SIGINT, sighandler);
     signal(SIGKILL, sighandler);
     signal(SIGTERM, sighandler);
+    signal(SIGPIPE, SIG_IGN);
     atexit(cleanup);
 
     for (i = 0; i < MAX_TUNNELS; i++) {

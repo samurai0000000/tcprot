@@ -102,13 +102,14 @@ done:
     return sock;
 }
 
-int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t outport)
+int tcptun_accept(int sock, struct pair *pair,
+                  const char *outhost, uint16_t outport)
 {
     char hostname[128];
     char *hostaddrp;
     char instr[64];
     socklen_t len;
-    int val;
+    int rv, flags, val;
     struct timeval timeval;
 
     gettimeofday(&timeval, NULL);
@@ -126,6 +127,7 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
         goto done;
     }
 
+    /* Get ip address of incoming socket */
     hostaddrp = inet_ntoa(pair->in_addr.sin_addr);
     if (hostaddrp == NULL) {
         nc_log("failed in inet_ntoa()!\n");
@@ -136,8 +138,28 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
         strcpy(instr, hostaddrp);
     }
 
-    tcptun_nslookup(hostname, outhost);
+    /* Get socket flags */
+    flags = fcntl(pair->in_sock, F_GETFL);
+    if (flags < 0) {
+        nc_log("F_GETFL failed %d!\n", flags);
+        close(pair->in_sock);
+        pair->in_sock = -1;
+        goto done;
+    }
 
+#if 0
+    /* Set socket to non-blocking */
+    rv = fcntl(pair->in_sock, F_SETFL, flags | O_NONBLOCK);
+    if (rv != 0) {
+        nc_log("F_SETFL failed %d!\n", rv, errno);
+        close(pair->in_sock);
+        pair->in_sock = -1;
+        goto done;
+    }
+#endif
+
+    /* Resolve name of outgoing host to ip address */
+    tcptun_nslookup(hostname, outhost);
     memset(&pair->out_addr, 0x0, sizeof(pair->out_addr));
     pair->out_addr.sin_family = AF_INET;
     if (inet_aton(hostname, &pair->out_addr.sin_addr) == 0) {
@@ -152,9 +174,27 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
         goto done;
     }
 
+    /* Set socket options */
     val = 1;
-    setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &val, sizeof(val));
-    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val));
+    rv = setsockopt(pair->out_sock, SOL_SOCKET, SO_KEEPALIVE,
+                    &val, sizeof(val));
+    if (rv < 0) {
+        nc_log("SOL_SOCKET failed!\n");
+        close(pair->out_sock);
+        pair->out_sock = -1;
+        goto done;
+    }
+
+#if 0
+    rv = setsockopt(pair->out_sock, IPPROTO_TCP, TCP_NODELAY,
+                    &val, sizeof(val));
+    if (rv < 0) {
+        nc_log("SOL_SOCKET failed!\n");
+        close(pair->out_sock);
+        pair->out_sock = -1;
+        goto done;
+    }
+#endif
 
     pair->out_addr.sin_addr.s_addr = inet_addr(hostname);
     pair->out_addr.sin_port = htons(outport);
@@ -167,6 +207,26 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
         pair->out_sock = -1;
         goto done;
     }
+
+    /* Get socket flags */
+    flags = fcntl(pair->out_sock, F_GETFL);
+    if (flags < 0) {
+        nc_log("F_GETFL failed %d!\n", flags);
+        close(pair->out_sock);
+        pair->out_sock = -1;
+        goto done;
+    }
+
+#if 0
+    /* Set socket to non-blocking */
+    rv = fcntl(pair->out_sock, F_SETFL, flags | O_NONBLOCK);
+    if (rv != 0) {
+        nc_log("F_SETFL failed %d!\n", rv, errno);
+        close(pair->out_sock);
+        pair->out_sock = -1;
+        goto done;
+    }
+#endif
 
     nc_log("established %s:%d -> %s:%d\n",
            instr, ntohs(pair->in_addr.sin_port),
