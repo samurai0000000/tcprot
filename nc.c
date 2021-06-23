@@ -44,7 +44,7 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
     char timestr[64];
     char instr[64];
     struct timeval timeval;
-    time_t conntime = 0, secs = 0, mins = 0, hours = 0, days = 0;
+    time_t conntime, secs, mins, hours, days;
 
     if (G_ncinit == 0)
         return;
@@ -65,20 +65,15 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
 
         conntime = timeval.tv_sec - pairs[i].tod_sec;
         secs = conntime % 60;
-        if (conntime > 60) {
-            mins = conntime / 60;
-            mins %= 60;
-        }
-        if (conntime > 3600) {
-            hours = conntime / 3600;
-            hours %= 60;
-        }
-        if (conntime > 86400) {
-            days = conntime / 86400;
-        }
+        mins = conntime / 60;
+        mins %= 60;
+        hours = conntime / 3600;
+        hours %= 60;
+        days = conntime / 86400;
 
         if (days > 0) {
-            sprintf(timestr, "%lud:%.2lu:%.2lu:%.2lu", days, hours, mins, secs);
+            sprintf(timestr, "%lud:%.2lu:%.2lu:%.2lu",
+                    days, hours, mins, secs);
         } else {
             sprintf(timestr, "%.2lu:%.2lu:%.2lu", hours, mins, secs);
         }
