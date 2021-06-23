@@ -43,9 +43,10 @@ static char nc_instatus_code(uint8_t status)
     char c = '?';
 
     switch (status) {
-    case 0: c = 'r'; break;
-    case 1: c = 'R'; break;
-    case 2: c = 'o'; break;
+    case 0: c = '_'; break;
+    case 1: c = 'r'; break;
+    case 2: c = 'R'; break;
+    case 3: c = 'o'; break;
     case 4: c = 'O'; break;
     default: break;
     }
@@ -58,9 +59,10 @@ static char nc_outstatus_code(uint8_t status)
     char c = '?';
 
     switch (status) {
-    case 0: c = 'g'; break;
-    case 1: c = 'G'; break;
-    case 2: c = 'w'; break;
+    case 0: c = '_'; break;
+    case 1: c = 'g'; break;
+    case 2: c = 'G'; break;
+    case 3: c = 'w'; break;
     case 4: c = 'W'; break;
     default: break;
     }
