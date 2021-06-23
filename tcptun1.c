@@ -15,6 +15,7 @@ static int serv_sock = -1;
 static struct pair tunpairs[MAX_TUNNELS];
 static fd_set fdset;
 static int daemonize = 0;
+static int debug = 0;
 static int inport = DEFAULT_INPORT;
 static char outhost[128] = DEFAULT_OUTHOST;
 static int outport = DEFAULT_OUTPORT;
@@ -22,6 +23,7 @@ static int outport = DEFAULT_OUTPORT;
 static const struct option long_options[] = {
     { "help", no_argument, 0, 'h', },
     { "daemonize", no_argument, 0, 'd', },
+    { "debug", no_argument, 0, 'D', },
     { "inport", required_argument, 0, 'I', },
     { "outport", required_argument, 0, 'O', },
     { "outhost", required_argument, 0, 'H', },
@@ -34,6 +36,7 @@ static void print_help(int argc, char **argv)
     fprintf(stderr,
             "	--help, -h      This message\n"
             "	--daemonize,-d  run as daemon\n"
+            "   --debug,-D      debug mode (no ncurses)\n"
             "	--inport,-I     incoming port\n"
             "	--outport,-O    outgoing port\n"
             "	--outhost,-H    outgoing host\n");
@@ -61,13 +64,24 @@ static void tcptun1_incoming_process(struct pair *pair)
     ssize_t size;
     ssize_t wsize;
     int i;
+    int rv, pending = 0;
 
-    pair->instatus = 1;
-    size = read(pair->in_sock, buf, sizeof(buf));
-    pair->instatus = 2;
-    if (size == 0) {
+    /* Get output buffer queue size */
+    rv = ioctl(pair->in_sock, SIOCOUTQ, &pending);
+    if (rv < 0) {
+        nc_log("SIOCOUTQ failed %d!\n", rv);
+        tcptun_terminate_pair(pair);
         goto done;
-    } else if (size < 0) {
+    }
+
+    /* Back off if too high */
+    if (pending > 8192) {
+        return;
+    }
+
+    /* Read data from socket */
+    size = read(pair->in_sock, buf, sizeof(buf));
+    if (size <= 0) {
         nc_log("broken incoming read %d\n", size);
         tcptun_terminate_pair(pair);
         goto done;
@@ -75,13 +89,13 @@ static void tcptun1_incoming_process(struct pair *pair)
 
     pair->inbytes += size;
 
+    /* Transform */
     for (i = 0; i < size; i++) {
         buf[i] ^= 0x55;
     }
 
-    pair->instatus = 3;
+    /* Write data to socket */
     wsize = write(pair->out_sock, buf, size);
-    pair->instatus = 4;
     if (wsize != size) {
         nc_log("broken incoming write %d != %d\n", wsize, size);
         tcptun_terminate_pair(pair);
@@ -90,7 +104,6 @@ static void tcptun1_incoming_process(struct pair *pair)
 
 done:
 
-    pair->instatus = 0;
     if (daemonize == 0) {
         nc_refresh(tunpairs, MAX_TUNNELS);
     }
@@ -104,25 +117,36 @@ static void tcptun1_outgoing_process(struct pair *pair)
     ssize_t size;
     ssize_t wsize;
     int i;
+    int rv, pending = 0;
 
-    pair->outstatus = 1;
-    size = read(pair->out_sock, buf, sizeof(buf));
-    pair->outstatus = 2;
-    if (size == 0) {
+    /* Get output buffer queue size */
+    rv = ioctl(pair->in_sock, SIOCOUTQ, &pending);
+    if (rv < 0) {
+        nc_log("SIOCOUTQ failed %d!\n", rv);
+        tcptun_terminate_pair(pair);
         goto done;
-    } else if (size < 0) {
+    }
+
+    /* Back off if it's too high */
+    if (pending > 8192) {
+        //return;
+    }
+
+    /* Read data from socket */
+    size = read(pair->out_sock, buf, sizeof(buf));
+    if (size <= 0) {
         nc_log("broken outgoing read %d\n", size);
         tcptun_terminate_pair(pair);
         goto done;
     }
 
+    /* Transform */
     for (i = 0; i < size; i++) {
         buf[i] ^= 0x55;
     }
 
-    pair->outstatus = 3;
+    /* Write data to socket */
     wsize = write(pair->in_sock, buf, size);
-    pair->outstatus = 4;
     if (wsize != size) {
         nc_log("broken outgoing write %d != %d\n", wsize, size);
         tcptun_terminate_pair(pair);
@@ -133,7 +157,6 @@ static void tcptun1_outgoing_process(struct pair *pair)
 
 done:
 
-    pair->outstatus = 0;
     if (daemonize == 0) {
         nc_refresh(tunpairs, MAX_TUNNELS);
     }
@@ -149,13 +172,16 @@ int main(int argc, char **argv)
 
     while (1) {
         int option_index = 0;
-        int c = getopt_long(argc, argv, "dI:O:H:",
+        int c = getopt_long(argc, argv, "hdDI:O:H:",
                             long_options, &option_index);
         if (c == -1)
             break;
         switch (c) {
         case 'd':
             daemonize = 1;
+            break;
+        case 'D':
+            debug = 1;
             break;
         case 'I':
             inport = atoi(optarg);
@@ -179,7 +205,7 @@ int main(int argc, char **argv)
             perror("daemon");
             exit(EXIT_FAILURE);
         }
-    } else {
+    } else if (debug == 0) {
         char title[256];
         nc_init();
         snprintf(title, sizeof(title) - 1,

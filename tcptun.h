@@ -16,6 +16,8 @@
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
@@ -37,8 +39,6 @@ struct pair {
     time_t tod_sec;     /* gettimeofday() tv_sec stamped at accept() */
     uint64_t inbytes;	/* Tally of incoming bytes */
     uint64_t outbytes;	/* Tally of outgoing bytes */
-    uint8_t instatus;   /* Incoming status */
-    uint8_t outstatus;  /* Outgoing status */
 };
 
 extern int tcptun_find_free_pair(struct pair *pair_set,
