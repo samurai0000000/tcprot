@@ -38,6 +38,36 @@ void nc_log(const char *format, ...)
     va_end(ap);
 }
 
+static char nc_instatus_code(uint8_t status)
+{
+    char c = '?';
+
+    switch (status) {
+    case 0: c = 'r'; break;
+    case 1: c = 'R'; break;
+    case 2: c = 'o'; break;
+    case 4: c = 'O'; break;
+    default: break;
+    }
+
+    return c;
+}
+
+static char nc_outstatus_code(uint8_t status)
+{
+    char c = '?';
+
+    switch (status) {
+    case 0: c = 'g'; break;
+    case 1: c = 'G'; break;
+    case 2: c = 'w'; break;
+    case 4: c = 'W'; break;
+    default: break;
+    }
+
+    return c;
+}
+
 void nc_refresh(const struct pair pairs[], unsigned int npairs)
 {
     unsigned int i, instance = 0;
@@ -81,10 +111,12 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
         }
         strcpy(instr, inet_ntoa(pairs[i].in_addr.sin_addr));
         mvprintw(2 + instance, 0,
-                 "%2d %s %s %llu/%llu",
+                 "%2d %s %s %c%c %llu/%llu",
                  instance,
                  timestr,
                  instr,
+                 nc_instatus_code(pairs[i].instatus),
+                 nc_outstatus_code(pairs[i].outstatus),
                  pairs[i].inbytes,
                  pairs[i].outbytes);
         instance++;

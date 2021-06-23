@@ -113,11 +113,10 @@ int tcptun_accept(int sock, struct pair *pair, const char *outhost, uint16_t out
 
     gettimeofday(&timeval, NULL);
 
+    memset(pair, 0x0, sizeof(*pair));
     pair->in_sock = -1;
     pair->out_sock = -1;
     pair->tod_sec = timeval.tv_sec;
-    pair->inbytes = 0;
-    pair->outbytes = 0;
 
 	/* Accept an incoming socket connection */
     len = sizeof(pair->in_addr);

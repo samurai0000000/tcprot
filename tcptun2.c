@@ -62,7 +62,9 @@ static void tcptun2_incoming_process(struct pair *pair)
     ssize_t wsize;
     int i;
 
+    pair->instatus = 1;
     size = read(pair->in_sock, buf, sizeof(buf));
+    pair->instatus = 2;
     if (size <= 0) {
         tcptun_terminate_pair(pair);
         goto done;
@@ -74,7 +76,9 @@ static void tcptun2_incoming_process(struct pair *pair)
         buf[i] ^= 0x55;
     }
 
+    pair->instatus = 3;
     wsize = write(pair->out_sock, buf, size);
+    pair->instatus = 4;
     if (wsize != size) {
         tcptun_terminate_pair(pair);
         goto done;
@@ -82,6 +86,7 @@ static void tcptun2_incoming_process(struct pair *pair)
 
 done:
 
+    pair->instatus = 0;
     if (daemonize == 0) {
         nc_refresh(tunpairs, MAX_TUNNELS);
     }
@@ -96,7 +101,9 @@ static void tcptun2_outgoing_process(struct pair *pair)
     ssize_t wsize;
     int i;
 
+    pair->outstatus = 1;
     size = read(pair->out_sock, buf, sizeof(buf));
+    pair->outstatus = 2;
     if (size <= 0) {
         tcptun_terminate_pair(pair);
         goto done;
@@ -106,7 +113,9 @@ static void tcptun2_outgoing_process(struct pair *pair)
         buf[i] ^= 0x55;
     }
 
+    pair->outstatus = 3;
     wsize = write(pair->in_sock, buf, size);
+    pair->outstatus = 4;
     if (wsize != size) {
         tcptun_terminate_pair(pair);
         goto done;
@@ -116,6 +125,7 @@ static void tcptun2_outgoing_process(struct pair *pair)
 
 done:
 
+    pair->outstatus = 0;
     if (daemonize == 0) {
         nc_refresh(tunpairs, MAX_TUNNELS);
     }
