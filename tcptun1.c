@@ -52,7 +52,7 @@ static void cleanup(void)
     if (daemonize)
         fprintf(stderr, "goodbye!\n");
     else
-        endwin();
+        nc_cleanup();
 }
 
 static void tcptun1_incoming_process(struct pair *pair)
@@ -161,6 +161,13 @@ int main(int argc, char **argv)
             perror("daemon");
             exit(EXIT_FAILURE);
         }
+    } else {
+        char title[256];
+        nc_init();
+        snprintf(title, sizeof(title) - 1,
+                 "%s %d:%s:%d", basename(argv[0]), inport, outhost, outport);
+        nc_set_title(title);
+        nc_refresh(NULL, 0);
     }
 
     signal(SIGINT, sighandler);
@@ -176,15 +183,6 @@ int main(int argc, char **argv)
     serv_sock = tcptun_bind_listen(inport);
     if (serv_sock < 0) {
         exit(EXIT_FAILURE);
-    }
-
-    if (daemonize == 0) {
-        char title[256];
-        initscr();
-        snprintf(title, sizeof(title) - 1,
-                 "%s %d:%s:%d", basename(argv[0]), inport, outhost, outport);
-        nc_set_title(title);
-        nc_refresh(NULL, 0);
     }
 
     while (serv_sock >= 0) {
@@ -213,7 +211,7 @@ int main(int argc, char **argv)
                               outhost, outport) == 0) {
                 i = tcptun_find_free_pair(tunpairs, MAX_TUNNELS);
                 if (i < 0 || i >= MAX_TUNNELS) {
-                    fprintf(stderr, "no free tunnel left!\n");
+                    nc_log("no free tunnel left!\n");
                     close(pair.in_sock);
                     close(pair.out_sock);
                     continue;

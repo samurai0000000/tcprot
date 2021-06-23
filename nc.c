@@ -6,8 +6,16 @@
 
 #include "tcptun.h"
 
+static int G_ncinit = 0;
 static char G_title[256] = "*** TCPTUN ***";
-static time_t last_sec = 0;
+static char G_status[256] = "";
+static time_t G_last_sec = 0;
+
+void nc_init(void)
+{
+    initscr();
+    G_ncinit = 1;
+}
 
 void nc_set_title(const char *title)
 {
@@ -15,6 +23,19 @@ void nc_set_title(const char *title)
         return;
 
     strncpy(G_title, title, sizeof(G_title) - 1);
+}
+
+void nc_log(const char *format, ...)
+{
+    va_list ap;
+
+    va_start(ap, format);
+    if (G_ncinit == 0) {
+        vfprintf(stderr, format, ap);
+    } else {
+        vsnprintf(G_status, sizeof(G_status) - 1, format, ap);
+    }
+    va_end(ap);
 }
 
 void nc_refresh(const struct pair pairs[], unsigned int npairs)
@@ -28,8 +49,9 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
     gettimeofday(&timeval, NULL);
 
     clear();
-    mvprintw(0, 0, "%s\n", G_title);
-    mvprintw(1, 0, "-------------------------------------------------------\n");
+    mvprintw(0, 0, G_title);
+    mvhline(1, 0, '-', COLS);
+    mvprintw(LINES - 1, 0, G_status);
 
     if (pairs == NULL)
         goto done;
@@ -59,7 +81,7 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
         }
         strcpy(instr, inet_ntoa(pairs[i].in_addr.sin_addr));
         mvprintw(2 + instance, 0,
-                 "%2d %s %s %llu/%llu\n",
+                 "%2d %s %s %llu/%llu",
                  instance,
                  timestr,
                  instr,
@@ -70,9 +92,17 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
 
 done:
 
-    if (timeval.tv_sec != last_sec) {
+    if (timeval.tv_sec != G_last_sec) {
         refresh();
-        last_sec = timeval.tv_sec;
+        G_last_sec = timeval.tv_sec;
+    }
+}
+
+void nc_cleanup(void)
+{
+    if (G_ncinit) {
+        endwin();
+        G_ncinit = 0;
     }
 }
 
