@@ -51,6 +51,9 @@ extern void tcptun_terminate_pair(struct pair *pair);
 extern int tcptun_bind_listen(uint16_t port);
 extern int tcptun_accept(int sock, struct pair *pair,
                          const char *outhost, uint16_t outport);
+extern void tcptun_incoming_process(struct pair *pair);
+extern void tcptun_outgoing_process(struct pair *pair);
+
 extern void nc_init(void);
 extern void nc_set_title(const char *title);
 extern void nc_log(const char *format, ...);

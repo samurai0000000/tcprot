@@ -58,112 +58,6 @@ static void cleanup(void)
         nc_cleanup();
 }
 
-static void tcptun1_incoming_process(struct pair *pair)
-{
-    char buf[TCP_BUFFER_SIZE];
-    ssize_t size;
-    ssize_t wsize;
-    int i;
-    int rv, pending = 0;
-
-    /* Get output buffer queue size */
-    rv = ioctl(pair->in_sock, SIOCOUTQ, &pending);
-    if (rv < 0) {
-        nc_log("SIOCOUTQ failed %d!\n", rv);
-        tcptun_terminate_pair(pair);
-        goto done;
-    }
-
-    /* Back off if too high */
-    if (pending > TCP_TQ_BACKOFF) {
-        return;
-    }
-
-    /* Read data from socket */
-    size = read(pair->in_sock, buf, sizeof(buf));
-    if (size <= 0) {
-        nc_log("broken incoming read %d\n", size);
-        tcptun_terminate_pair(pair);
-        goto done;
-    }
-
-    pair->inbytes += size;
-
-    /* Transform */
-    for (i = 0; i < size; i++) {
-        buf[i] ^= 0x55;
-    }
-
-    /* Write data to socket */
-    wsize = write(pair->out_sock, buf, size);
-    if (wsize != size) {
-        nc_log("broken incoming write %d != %d\n", wsize, size);
-        tcptun_terminate_pair(pair);
-        goto done;
-    }
-
-done:
-
-    if (daemonize == 0) {
-        nc_refresh(tunpairs, MAX_TUNNELS);
-    }
-
-    return;
-}
-
-static void tcptun1_outgoing_process(struct pair *pair)
-{
-    char buf[TCP_BUFFER_SIZE];
-    ssize_t size;
-    ssize_t wsize;
-    int i;
-    int rv, pending = 0;
-
-    /* Get output buffer queue size */
-    rv = ioctl(pair->in_sock, SIOCOUTQ, &pending);
-    if (rv < 0) {
-        nc_log("SIOCOUTQ failed %d!\n", rv);
-        tcptun_terminate_pair(pair);
-        goto done;
-    }
-
-    /* Back off if it's too high */
-    if (pending > TCP_TQ_BACKOFF) {
-        return;
-    }
-
-    /* Read data from socket */
-    size = read(pair->out_sock, buf, sizeof(buf));
-    if (size <= 0) {
-        nc_log("broken outgoing read %d\n", size);
-        tcptun_terminate_pair(pair);
-        goto done;
-    }
-
-    /* Transform */
-    for (i = 0; i < size; i++) {
-        buf[i] ^= 0x55;
-    }
-
-    /* Write data to socket */
-    wsize = write(pair->in_sock, buf, size);
-    if (wsize != size) {
-        nc_log("broken outgoing write %d != %d\n", wsize, size);
-        tcptun_terminate_pair(pair);
-        goto done;
-    }
-
-    pair->outbytes += size;
-
-done:
-
-    if (daemonize == 0) {
-        nc_refresh(tunpairs, MAX_TUNNELS);
-    }
-
-    return;
-}
-
 int main(int argc, char **argv)
 {
     struct pair pair;
@@ -272,11 +166,11 @@ int main(int argc, char **argv)
         for (i = 0; i < MAX_TUNNELS; i++) {
             if (tunpairs[i].in_sock >= 0 &&
                 FD_ISSET(tunpairs[i].in_sock, &fdset)) {
-                tcptun1_incoming_process(&tunpairs[i]);
+                tcptun_incoming_process(&tunpairs[i]);
             }
             if (tunpairs[i].out_sock >= 0 &&
                 FD_ISSET(tunpairs[i].out_sock, &fdset)) {
-                tcptun1_outgoing_process(&tunpairs[i]);
+                tcptun_outgoing_process(&tunpairs[i]);
             }
         }
     }
