@@ -362,13 +362,11 @@ void tcptun_outgoing_process(struct pair *pair)
         tcptun_terminate_pair(pair);
         goto done;
     }
-    printf("outgoing pending %d\n", pending);
 
     rsize = sizeof(buf);
 #if (TCP_NONBLOCKING != 0)
     /* Back off if it's too high */
     if (pending > TCP_TQ_BACKOFF) {
-        printf("backoff\n");
         rsize = 1;
     }
 #endif
