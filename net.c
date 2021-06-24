@@ -102,6 +102,56 @@ done:
     return sock;
 }
 
+static int tcptun_setsockopt(int sock)
+{
+    int rv = 0;
+    int val;
+
+    /* Set TCP_NODELAY */
+    val = 1;
+    rv = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val));
+    if (rv != 0) {
+        nc_log("TCP_NODELAY failed!\n");
+        goto done;
+    }
+
+    /* Set SO_KEEP_ALIVE */
+    val = 1;
+    rv = setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &val, sizeof(val));
+    if (rv != 0) {
+        nc_log("SO_KEEPALIVE failed!\n");
+        goto done;
+    }
+
+    /* Set TCP_KEEPIDLE */
+    val = 10;
+    rv = setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &val, sizeof(val));
+    if (rv != 0) {
+        nc_log("SO_KEEPIDLE failed!\n");
+        goto done;
+    }
+
+    /* Set TCP_KEEPCNT */
+    val = 5;
+    rv = setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &val, sizeof(val));
+    if (rv != 0) {
+        nc_log("SO_KEEPCNT failed!\n");
+        goto done;
+    }
+
+    /* Set TCP_KEEPINTV */
+    val = 5;
+    rv = setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &val, sizeof(val));
+    if (rv != 0) {
+        nc_log("SO_KEEPINTVL failed!\n");
+        goto done;
+    }
+
+done:
+
+    return rv;
+}
+
 int tcptun_accept(int sock, struct pair *pair,
                   const char *outhost, uint16_t outport)
 {
@@ -109,7 +159,7 @@ int tcptun_accept(int sock, struct pair *pair,
     char *hostaddrp;
     char instr[64];
     socklen_t len;
-    int rv, flags, val;
+    int rv, flags;
     struct timeval timeval;
 
     gettimeofday(&timeval, NULL);
@@ -147,7 +197,7 @@ int tcptun_accept(int sock, struct pair *pair,
         goto done;
     }
 
-#if 0
+#if (TCP_NONBLOCKING != 0)
     /* Set socket to non-blocking */
     rv = fcntl(pair->in_sock, F_SETFL, flags | O_NONBLOCK);
     if (rv != 0) {
@@ -157,6 +207,14 @@ int tcptun_accept(int sock, struct pair *pair,
         goto done;
     }
 #endif
+
+    /* Set desired socket properties */
+    rv = tcptun_setsockopt(pair->in_sock);
+    if (rv != 0) {
+        close(pair->in_sock);
+        pair->in_sock = -1;
+        goto done;
+    }
 
     /* Resolve name of outgoing host to ip address */
     tcptun_nslookup(hostname, outhost);
@@ -174,31 +232,11 @@ int tcptun_accept(int sock, struct pair *pair,
         goto done;
     }
 
-    /* Set socket options */
-    val = 1;
-    rv = setsockopt(pair->out_sock, SOL_SOCKET, SO_KEEPALIVE,
-                    &val, sizeof(val));
-    if (rv < 0) {
-        nc_log("SOL_SOCKET failed!\n");
-        close(pair->out_sock);
-        pair->out_sock = -1;
-        goto done;
-    }
-
-#if 0
-    rv = setsockopt(pair->out_sock, IPPROTO_TCP, TCP_NODELAY,
-                    &val, sizeof(val));
-    if (rv < 0) {
-        nc_log("SOL_SOCKET failed!\n");
-        close(pair->out_sock);
-        pair->out_sock = -1;
-        goto done;
-    }
-#endif
-
+    /* Record outgoing ip/port */
     pair->out_addr.sin_addr.s_addr = inet_addr(hostname);
     pair->out_addr.sin_port = htons(outport);
 
+    /* Connect to destination peer */
     if (connect(pair->out_sock, (const struct sockaddr *) &pair->out_addr,
                 sizeof(pair->out_addr)) != 0) {
         perror("connect");
@@ -217,7 +255,7 @@ int tcptun_accept(int sock, struct pair *pair,
         goto done;
     }
 
-#if 0
+#if (TCP_NONBLOCKING != 0)
     /* Set socket to non-blocking */
     rv = fcntl(pair->out_sock, F_SETFL, flags | O_NONBLOCK);
     if (rv != 0) {
@@ -227,6 +265,14 @@ int tcptun_accept(int sock, struct pair *pair,
         goto done;
     }
 #endif
+
+    /* Set desired socket properties */
+    rv = tcptun_setsockopt(pair->out_sock);
+    if (rv != 0) {
+        close(pair->out_sock);
+        pair->out_sock = -1;
+        goto done;
+    }
 
     nc_log("established %s:%d -> %s:%d\n",
            instr, ntohs(pair->in_addr.sin_port),

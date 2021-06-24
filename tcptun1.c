@@ -60,7 +60,7 @@ static void cleanup(void)
 
 static void tcptun1_incoming_process(struct pair *pair)
 {
-    char buf[1024 * 16];
+    char buf[TCP_BUFFER_SIZE];
     ssize_t size;
     ssize_t wsize;
     int i;
@@ -75,7 +75,7 @@ static void tcptun1_incoming_process(struct pair *pair)
     }
 
     /* Back off if too high */
-    if (pending > 8192) {
+    if (pending > TCP_TQ_BACKOFF) {
         return;
     }
 
@@ -113,7 +113,7 @@ done:
 
 static void tcptun1_outgoing_process(struct pair *pair)
 {
-    char buf[1024 * 16];
+    char buf[TCP_BUFFER_SIZE];
     ssize_t size;
     ssize_t wsize;
     int i;
@@ -128,8 +128,8 @@ static void tcptun1_outgoing_process(struct pair *pair)
     }
 
     /* Back off if it's too high */
-    if (pending > 8192) {
-        //return;
+    if (pending > TCP_TQ_BACKOFF) {
+        return;
     }
 
     /* Read data from socket */
