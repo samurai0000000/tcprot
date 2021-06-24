@@ -300,28 +300,28 @@ done:
 void tcptun_incoming_process(struct pair *pair)
 {
     char buf[TCP_BUFFER_SIZE];
-    ssize_t size;
-    ssize_t wsize;
+    ssize_t size, wsize, rsize;
     int i;
     int rv, pending = 0;
 
     /* Get output buffer queue size */
-    rv = ioctl(pair->in_sock, SIOCOUTQ, &pending);
+    rv = ioctl(pair->out_sock, SIOCOUTQ, &pending);
     if (rv < 0) {
         nc_log("SIOCOUTQ failed %d!\n", rv);
         tcptun_terminate_pair(pair);
         goto done;
     }
 
+    rsize = sizeof(buf);
 #if (TCP_NONBLOCKING != 0)
     /* Back off if it's too high */
     if (pending > TCP_TQ_BACKOFF) {
-        return;
+        rsize = 1;
     }
 #endif
 
     /* Read data from socket */
-    size = read(pair->in_sock, buf, sizeof(buf));
+    size = read(pair->in_sock, buf, rsize);
     if (size <= 0) {
         nc_log("broken incoming read %d\n", size);
         tcptun_terminate_pair(pair);
@@ -351,8 +351,7 @@ done:
 void tcptun_outgoing_process(struct pair *pair)
 {
     char buf[TCP_BUFFER_SIZE];
-    ssize_t size;
-    ssize_t wsize;
+    ssize_t size, wsize, rsize;
     int i;
     int rv, pending = 0;
 
@@ -363,16 +362,19 @@ void tcptun_outgoing_process(struct pair *pair)
         tcptun_terminate_pair(pair);
         goto done;
     }
+    printf("outgoing pending %d\n", pending);
 
+    rsize = sizeof(buf);
 #if (TCP_NONBLOCKING != 0)
     /* Back off if it's too high */
     if (pending > TCP_TQ_BACKOFF) {
-        return;
+        printf("backoff\n");
+        rsize = 1;
     }
 #endif
 
     /* Read data from socket */
-    size = read(pair->out_sock, buf, sizeof(buf));
+    size = read(pair->out_sock, buf, rsize);
     if (size <= 0) {
         nc_log("broken outgoing read %d\n", size);
         tcptun_terminate_pair(pair);
