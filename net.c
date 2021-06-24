@@ -313,10 +313,12 @@ void tcptun_incoming_process(struct pair *pair)
         goto done;
     }
 
+#if (TCP_NONBLOCKING != 0)
     /* Back off if it's too high */
     if (pending > TCP_TQ_BACKOFF) {
         return;
     }
+#endif
 
     /* Read data from socket */
     size = read(pair->in_sock, buf, sizeof(buf));
@@ -362,10 +364,12 @@ void tcptun_outgoing_process(struct pair *pair)
         goto done;
     }
 
+#if (TCP_NONBLOCKING != 0)
     /* Back off if it's too high */
     if (pending > TCP_TQ_BACKOFF) {
         return;
     }
+#endif
 
     /* Read data from socket */
     size = read(pair->out_sock, buf, sizeof(buf));
