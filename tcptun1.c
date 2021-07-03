@@ -9,7 +9,6 @@
 #define DEFAULT_INPORT		42022
 #define DEFAULT_OUTPORT		42122
 #define DEFAULT_OUTHOST		"127.0.0.1"
-#define MAX_TUNNELS		16
 
 static int serv_sock = -1;
 static struct pair tunpairs[MAX_TUNNELS];

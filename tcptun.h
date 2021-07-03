@@ -28,9 +28,10 @@
 #ifndef __TCPTUN_H__
 #define __TCPTUN_H__
 
+#define MAX_TUNNELS		  10
 #define TCP_BUFFER_SIZE   (1024 * 4)
 #define TCP_TQ_BACKOFF    (1024 * 12)
-#define TCP_NONBLOCKING   1
+#define TCP_NONBLOCKING   0
 
 /*
  * A tunneling TCP socket pair.

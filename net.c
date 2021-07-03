@@ -239,7 +239,6 @@ int tcptun_accept(int sock, struct pair *pair,
     /* Connect to destination peer */
     if (connect(pair->out_sock, (const struct sockaddr *) &pair->out_addr,
                 sizeof(pair->out_addr)) != 0) {
-        perror("connect");
         nc_log("outgoing to %s:%d failed!\n", hostname, outport);
         close(pair->out_sock);
         pair->out_sock = -1;
@@ -323,7 +322,6 @@ void tcptun_incoming_process(struct pair *pair)
     /* Read data from socket */
     size = read(pair->in_sock, buf, rsize);
     if (size <= 0) {
-        nc_log("broken incoming read %d\n", size);
         tcptun_terminate_pair(pair);
         goto done;
     }
@@ -338,7 +336,6 @@ void tcptun_incoming_process(struct pair *pair)
     /* Write data to socket */
     wsize = write(pair->out_sock, buf, size);
     if (wsize != size) {
-        nc_log("broken incoming write %d != %d\n", wsize, size);
         tcptun_terminate_pair(pair);
         goto done;
     }
@@ -374,7 +371,6 @@ void tcptun_outgoing_process(struct pair *pair)
     /* Read data from socket */
     size = read(pair->out_sock, buf, rsize);
     if (size <= 0) {
-        nc_log("broken outgoing read %d\n", size);
         tcptun_terminate_pair(pair);
         goto done;
     }
@@ -387,7 +383,6 @@ void tcptun_outgoing_process(struct pair *pair)
     /* Write data to socket */
     wsize = write(pair->in_sock, buf, size);
     if (wsize != size) {
-        nc_log("broken outgoing write %d != %d\n", wsize, size);
         tcptun_terminate_pair(pair);
         goto done;
     }

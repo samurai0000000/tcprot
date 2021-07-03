@@ -8,13 +8,33 @@
 
 static int G_ncinit = 0;
 static char G_title[256] = "*** TCPTUN ***";
-static char G_status[256] = "";
 static time_t G_last_sec = 0;
+
+WINDOW *winlog = NULL;
 
 void nc_init(void)
 {
-    initscr();
+    int height, width, starty, startx;
+
     G_ncinit = 1;
+
+    initscr();
+    cbreak();
+    noecho();
+    refresh();
+
+    /* Create log window */
+    height = 12;
+    width = COLS;
+    starty = LINES - height;
+    startx = 0;
+    winlog = newwin(height, width, starty, startx);
+    wsetscrreg(winlog, 1, height - 1);
+    scrollok(winlog, TRUE);
+    idlok(winlog, TRUE);
+    box(winlog, 0, 0);
+    mvwprintw(winlog, 0, 2, "Log");
+    wrefresh(winlog);
 }
 
 void nc_set_title(const char *title)
@@ -28,14 +48,30 @@ void nc_set_title(const char *title)
 void nc_log(const char *format, ...)
 {
     va_list ap;
+    char buf[1024];
+    int maxy = getmaxy(winlog);
+    int cury = getcury(winlog);
 
     va_start(ap, format);
     if (G_ncinit == 0) {
         vfprintf(stderr, format, ap);
     } else {
-        vsnprintf(G_status, sizeof(G_status) - 1, format, ap);
+        vsnprintf(buf, sizeof(buf) - 1, format, ap);
     }
     va_end(ap);
+
+    if (cury == 0) {
+        cury = 1;
+    } else if (cury > (maxy - 1)) {
+        cury = (maxy - 1);
+    }
+
+    mvwprintw(winlog, cury, 1, buf);
+    cury = getcury(winlog);
+    box(winlog, 0, 0);
+    mvwprintw(winlog, 0, 2, "Log");
+    wmove(winlog, cury, 1);
+    wrefresh(winlog);
 }
 
 void nc_refresh(const struct pair pairs[], unsigned int npairs)
@@ -51,10 +87,8 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
 
     gettimeofday(&timeval, NULL);
 
-    clear();
     mvprintw(0, 0, G_title);
     mvhline(1, 0, '-', COLS);
-    mvprintw(LINES - 1, 0, G_status);
 
     if (pairs == NULL)
         goto done;
@@ -80,7 +114,7 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
         strcpy(instr, inet_ntoa(pairs[i].in_addr.sin_addr));
         mvprintw(2 + instance, 0,
                  "%2d %s %s %llu/%llu",
-                 instance,
+                 i,
                  timestr,
                  instr,
                  pairs[i].inbytes,
