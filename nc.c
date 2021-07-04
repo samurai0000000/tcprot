@@ -11,6 +11,7 @@ static char G_title[256] = "*** TCPTUN ***";
 static time_t G_last_sec = 0;
 
 WINDOW *winlog = NULL;
+WINDOW *wincon = NULL;
 
 void nc_init(void)
 {
@@ -21,10 +22,10 @@ void nc_init(void)
     initscr();
     cbreak();
     noecho();
-    refresh();
+    curs_set(0);
 
     /* Create log window */
-    height = 12;
+    height = 11;
     width = COLS;
     starty = LINES - height;
     startx = 0;
@@ -35,6 +36,19 @@ void nc_init(void)
     box(winlog, 0, 0);
     mvwprintw(winlog, 0, 2, "Log");
     wrefresh(winlog);
+
+    /* Create con window */
+    height = 12;
+    width = COLS;
+    starty = 1;
+    startx = 0;
+    wincon = newwin(height, width, starty, startx);
+    wsetscrreg(wincon, 1, height - 1);
+    scrollok(wincon, TRUE);
+    idlok(wincon, TRUE);
+    box(wincon, 0, 0);
+    mvwprintw(wincon, 0, 2, "Connections");
+    wrefresh(wincon);
 }
 
 void nc_set_title(const char *title)
@@ -52,13 +66,25 @@ void nc_log(const char *format, ...)
     int maxy = getmaxy(winlog);
     int cury = getcury(winlog);
 
-    va_start(ap, format);
     if (G_ncinit == 0) {
-        vfprintf(stderr, format, ap);
-    } else {
-        vsnprintf(buf, sizeof(buf) - 1, format, ap);
+        return;
     }
-    va_end(ap);
+
+    if (format) {
+        time_t t;
+        struct tm *tm;
+        size_t len = 0;
+
+        t = time(NULL);
+        tm = localtime(&t);
+        if (tm != NULL) {
+            len = strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S - ", tm);
+        }
+
+        va_start(ap, format);
+        vsnprintf(buf + len, sizeof(buf) - len - 1, format, ap);
+        va_end(ap);
+    }
 
     if (cury == 0) {
         cury = 1;
@@ -66,7 +92,9 @@ void nc_log(const char *format, ...)
         cury = (maxy - 1);
     }
 
-    mvwprintw(winlog, cury, 1, buf);
+    if (format) {
+        mvwprintw(winlog, cury, 1, buf);
+    }
     cury = getcury(winlog);
     box(winlog, 0, 0);
     mvwprintw(winlog, 0, 2, "Log");
@@ -87,11 +115,10 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
 
     gettimeofday(&timeval, NULL);
 
-    mvprintw(0, 0, G_title);
-    mvhline(1, 0, '-', COLS);
-
     if (pairs == NULL)
         goto done;
+
+    wclear(wincon);
 
     for (i = 0; i < npairs; i++) {
         if (pairs[i].in_sock <= 0)
@@ -112,20 +139,26 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
             sprintf(timestr, "%.2lu:%.2lu:%.2lu", hours, mins, secs);
         }
         strcpy(instr, inet_ntoa(pairs[i].in_addr.sin_addr));
-        mvprintw(2 + instance, 0,
-                 "%2d %s %s %llu/%llu",
-                 i,
-                 timestr,
-                 instr,
-                 pairs[i].inbytes,
-                 pairs[i].outbytes);
+        mvwprintw(wincon,
+                  1 + instance, 0,
+                  "%2d %s %s %llu/%llu",
+                  i,
+                  timestr,
+                  instr,
+                  pairs[i].inbytes,
+                  pairs[i].outbytes);
         instance++;
     }
+
+    mvprintw(0, 0, G_title);
+    box(wincon, 0, 0);
+    mvwprintw(wincon, 0, 2, "Connections");
 
 done:
 
     if (timeval.tv_sec != G_last_sec) {
         refresh();
+        wrefresh(wincon);
         G_last_sec = timeval.tv_sec;
     }
 }

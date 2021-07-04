@@ -21,6 +21,7 @@
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
+#include <time.h>
 #include <sys/time.h>
 #include <libgen.h>
 #include <ncurses.h>
