@@ -66,24 +66,18 @@ void nc_log(const char *format, ...)
     int maxy = getmaxy(winlog);
     int cury = getcury(winlog);
 
-    if (G_ncinit == 0) {
-        return;
+    if (format) {
+        va_start(ap, format);
+        if (G_ncinit == 0) {
+            vfprintf(stderr, format, ap);
+        } else {
+            vsnprintf(buf, sizeof(buf) - 1, format, ap);
+        }
+        va_end(ap);
     }
 
-    if (format) {
-        time_t t;
-        struct tm *tm;
-        size_t len = 0;
-
-        t = time(NULL);
-        tm = localtime(&t);
-        if (tm != NULL) {
-            len = strftime(buf, sizeof(buf), "%Y/%m/%d %H:%M:%S - ", tm);
-        }
-
-        va_start(ap, format);
-        vsnprintf(buf + len, sizeof(buf) - len - 1, format, ap);
-        va_end(ap);
+    if (G_ncinit == 0) {
+        return;
     }
 
     if (cury == 0) {
@@ -94,6 +88,7 @@ void nc_log(const char *format, ...)
 
     if (format) {
         mvwprintw(winlog, cury, 1, buf);
+        wclrtobot(winlog);
     }
     cury = getcury(winlog);
     box(winlog, 0, 0);
@@ -159,7 +154,7 @@ done:
     if (timeval.tv_sec != G_last_sec) {
         refresh();
         wrefresh(wincon);
-        G_last_sec = timeval.tv_sec;
+        nc_log(NULL);
     }
 }
 

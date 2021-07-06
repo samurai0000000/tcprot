@@ -33,12 +33,12 @@ static void print_help(int argc, char **argv)
 {
     fprintf(stderr, "Usage: %s [OPTIONS]\n", argv[0]);
     fprintf(stderr,
-            "	--help		    This message\n"
-            "	--daemonize,-d  run as daemon\n"
-            "   --debug,-D      debug mode (no ncurses)\n"
-            "	--inport,-I     incoming port\n"
-            "	--outport,-O    outgoing port\n"
-            "	--outhost,-H    outgoing host\n");
+            "  --help		    This message\n"
+            "  --daemonize,-d  run as daemon\n"
+            "  --debug,-D      debug mode (no ncurses)\n"
+            "  --inport,-I     incoming port\n"
+            "  --outport,-O    outgoing port\n"
+            "  --outhost,-H    outgoing host\n");
 }
 
 static void sighandler(int signal)
@@ -98,13 +98,6 @@ int main(int argc, char **argv)
             perror("daemon");
             exit(EXIT_FAILURE);
         }
-    } else if (debug == 0) {
-        char title[256];
-        nc_init();
-        snprintf(title, sizeof(title) - 1,
-                 "%s %d:%s:%d", basename(argv[0]), inport, outhost, outport);
-        nc_set_title(title);
-        nc_refresh(NULL, 0);
     }
 
     signal(SIGINT, sighandler);
@@ -121,6 +114,15 @@ int main(int argc, char **argv)
     serv_sock = tcptun_bind_listen(inport);
     if (serv_sock < 0) {
         exit(EXIT_FAILURE);
+    }
+
+    if (debug == 0) {
+        char title[256];
+        nc_init();
+        snprintf(title, sizeof(title) - 1,
+                 "%s %d:%s:%d", basename(argv[0]), inport, outhost, outport);
+        nc_set_title(title);
+        nc_refresh(NULL, 0);
     }
 
     while (serv_sock >= 0) {
