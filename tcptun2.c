@@ -33,7 +33,7 @@ static void print_help(int argc, char **argv)
 {
     fprintf(stderr, "Usage: %s [OPTIONS]\n", argv[0]);
     fprintf(stderr,
-            "  --help		    This message\n"
+            "  --help,-h       This message\n"
             "  --daemonize,-d  run as daemon\n"
             "  --debug,-D      debug mode (no ncurses)\n"
             "  --inport,-I     incoming port\n"
