@@ -130,7 +130,7 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
         mins = conntime / 60;
         mins %= 60;
         hours = conntime / 3600;
-        hours %= 60;
+        hours %= 24;
         days = conntime / 86400;
 
         if (days > 0) {
