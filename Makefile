@@ -9,14 +9,11 @@ LDFLAGS =	-lncurses
 
 .PHONY: default clean distclean
 
-TARGETS =	tcptun1 tcptun2
+TARGETS =	tcptun
 
 default: $(TARGETS)
 
-tcptun1: tcptun1.o net.o nc.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-tcptun2: tcptun2.o net.o nc.o
+tcptun: tcptun.o net.o nc.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c $(wildcard *.h)

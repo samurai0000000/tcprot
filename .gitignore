@@ -1,5 +1,4 @@
 *.o
 *~
 *.exe
-tcptun1
-tcptun2
+tcptun

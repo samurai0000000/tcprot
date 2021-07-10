@@ -1,13 +1,13 @@
 /*
- * tcptun2.c
+ * tcptun.c
  *
  * Copyright (C) 2019, Charles Chiou
  */
 
 #include "tcptun.h"
 
-#define DEFAULT_INPORT		42122
-#define DEFAULT_OUTPORT		22
+#define DEFAULT_INPORT		42022
+#define DEFAULT_OUTPORT		42122
 #define DEFAULT_OUTHOST		"127.0.0.1"
 
 static int serv_sock = -1;
@@ -122,7 +122,6 @@ int main(int argc, char **argv)
         snprintf(title, sizeof(title) - 1,
                  "%s %d:%s:%d", basename(argv[0]), inport, outhost, outport);
         nc_set_title(title);
-        nc_refresh(NULL, 0);
     }
 
     while (serv_sock >= 0) {
