@@ -96,7 +96,7 @@ void nc_log(const char *format, ...)
     va_end(ap);
 
     if (winlog == NULL) {
-        fprintf(stderr, "%s\n", buf);
+        fprintf(stderr, buf);
     } else {
         int maxy = getmaxy(winlog);
         int cury = getcury(winlog);

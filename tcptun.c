@@ -51,10 +51,13 @@ static void cleanup(void)
 {
     close(serv_sock);
     serv_sock = -1;
-    if (daemonize)
+    if (daemonize) {
         fprintf(stderr, "goodbye!\n");
-    else
-        nc_cleanup();
+    } else {
+        if (debug == 0) {
+            nc_cleanup();
+        }
+    }
 }
 
 int main(int argc, char **argv)
@@ -111,6 +114,10 @@ int main(int argc, char **argv)
         tunpairs[i].out_sock = -1;
     }
 
+    if (debug == 0) {
+        nc_init();
+    }
+
     serv_sock = tcptun_bind_listen(inport);
     if (serv_sock < 0) {
         exit(EXIT_FAILURE);
@@ -118,7 +125,6 @@ int main(int argc, char **argv)
 
     if (debug == 0) {
         char title[256];
-        nc_init();
         snprintf(title, sizeof(title) - 1,
                  "%s %d:%s:%d", basename(argv[0]), inport, outhost, outport);
         nc_set_title(title);
