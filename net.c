@@ -301,15 +301,20 @@ void tcptun_incoming_process(struct pair *pair)
     char buf[TCP_BUFFER_SIZE];
     ssize_t size, wsize, rsize;
     int i;
-    int rv, pending = 0;
+#if (TCP_NONBLOCKING != 0)
+    int rv;
+    int pending = 0;
+#endif
 
+#if (TCP_NONBLOCKING != 0)
     /* Get output buffer queue size */
-    rv = ioctl(pair->out_sock, SIOCOUTQ, &pending);
-    if (rv < 0) {
-        nc_log("SIOCOUTQ failed %d!\n", rv);
+    rv = ioctl(pair->out_sock, TIOCOUTQ, &pending);
+    if (rv != 0) {
+        nc_log("TIOCOUTQ: %s!\n", strerror(errno));
         tcptun_terminate_pair(pair);
         goto done;
     }
+#endif
 
     rsize = sizeof(buf);
 #if (TCP_NONBLOCKING != 0)
@@ -350,15 +355,20 @@ void tcptun_outgoing_process(struct pair *pair)
     char buf[TCP_BUFFER_SIZE];
     ssize_t size, wsize, rsize;
     int i;
-    int rv, pending = 0;
+#if (TCP_NONBLOCKING != 0)
+    int rv;
+    int pending = 0;
+#endif
 
+#if (TCP_NONBLOCKING != 0)
     /* Get output buffer queue size */
-    rv = ioctl(pair->in_sock, SIOCOUTQ, &pending);
-    if (rv < 0) {
-        nc_log("SIOCOUTQ failed %d!\n", rv);
+    rv = ioctl(pair->in_sock, TIOCOUTQ, &pending);
+    if (rv != 0) {
+        nc_log("TIOCOUTQ: %s!\n", strerror(errno));
         tcptun_terminate_pair(pair);
         goto done;
     }
+#endif
 
     rsize = sizeof(buf);
 #if (TCP_NONBLOCKING != 0)

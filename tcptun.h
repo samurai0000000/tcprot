@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <error.h>
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -17,14 +16,13 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <linux/sockios.h>
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
 #include <time.h>
 #include <sys/time.h>
 #include <libgen.h>
-#include <ncurses.h>
+#include <curses.h>
 
 #ifndef __TCPTUN_H__
 #define __TCPTUN_H__
