@@ -43,7 +43,11 @@ void nc_init(void)
     wsetscrreg(winlog, 1, height - 1);
     scrollok(winlog, TRUE);
     idlok(winlog, TRUE);
+#if defined(__SUNPRO_C)
+    wborder(winlog, '|', '|', '-', '-', '+', '+', '+', '+');
+#else
     box(winlog, 0, 0);
+#endif
     mvwprintw(winlog, 0, 2, "Log");
     wrefresh(winlog);
 
@@ -56,7 +60,11 @@ void nc_init(void)
     wsetscrreg(wincon, 1, height - 1);
     scrollok(wincon, TRUE);
     idlok(wincon, TRUE);
+#if defined(__SUNPRO_C)
+    wborder(wincon, '|', '|', '-', '-', '+', '+', '+', '+');
+#else
     box(wincon, 0, 0);
+#endif
     mvwprintw(wincon, 0, 2, "Connections");
     wrefresh(wincon);
 }
@@ -112,7 +120,11 @@ void nc_log(const char *format, ...)
         }
 
         cury = getcury(winlog);
+#if defined(__SUNPRO_C)
+        wborder(winlog, '|', '|', '-', '-', '+', '+', '+', '+');
+#else
         box(winlog, 0, 0);
+#endif
         mvwprintw(winlog, 0, 2, "Log");
         wmove(winlog, cury, 1);
         wrefresh(winlog);
@@ -165,7 +177,11 @@ void nc_refresh(const struct pair pairs[], unsigned int npairs)
         instance++;
     }
 
+#if defined(__SUNPRO_C)
+    wborder(wincon, '|', '|', '-', '-', '+', '+', '+', '+');
+#else
     box(wincon, 0, 0);
+#endif
     mvwprintw(wincon, 0, 2, "Connections");
 
 done:
