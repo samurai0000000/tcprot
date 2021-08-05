@@ -92,7 +92,6 @@ int main(int argc, char **argv)
         default:
             print_help(argc, argv);
             exit(EXIT_FAILURE);
-            break;
         }
     }
 
