@@ -123,11 +123,13 @@ static int tcptun_setsockopt(int sock)
         goto done;
     }
 
+#if !defined(__OpenBSD__)
+
     /* Set TCP_KEEPIDLE */
     val = 10;
     rv = setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &val, sizeof(val));
     if (rv != 0) {
-        nc_log("SO_KEEPIDLE failed!\n");
+        nc_log("TCP_KEEPIDLE failed!\n");
         goto done;
     }
 
@@ -135,7 +137,7 @@ static int tcptun_setsockopt(int sock)
     val = 5;
     rv = setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &val, sizeof(val));
     if (rv != 0) {
-        nc_log("SO_KEEPCNT failed!\n");
+        nc_log("TCP_KEEPCNT failed!\n");
         goto done;
     }
 
@@ -143,9 +145,11 @@ static int tcptun_setsockopt(int sock)
     val = 5;
     rv = setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &val, sizeof(val));
     if (rv != 0) {
-        nc_log("SO_KEEPINTVL failed!\n");
+        nc_log("TCP_KEEPINTVL failed!\n");
         goto done;
     }
+
+#endif  // !__OpenBSD__
 
 done:
 
