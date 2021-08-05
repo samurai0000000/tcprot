@@ -3,13 +3,13 @@
 #
 # Copyright (C) 2019, Charles Chiou
 
-OS :=		$(shell uname -o)
+OS :=		$(shell uname -s)
 
 CC ?=		gcc
 CFLAGS =	-Wall -O3 -g
 LDFLAGS =	-lcurses
 
-ifeq ($(OS),illumos)
+ifeq ($(OS),SunOS)
 LDFLAGS +=	-lsocket -lnsl
 endif
 
