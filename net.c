@@ -4,7 +4,27 @@
  * Copyright (C) 2019, Charles Chiou
  */
 
+#include <resolv.h>
 #include "tcptun.h"
+
+int tcptun_set_dns(const char *addr)
+{
+    struct sockaddr_in *dns;
+    struct in_addr in_addr;
+
+    if (inet_aton(addr, &in_addr) != 1) {
+        return -1;
+    }
+
+    res_init();
+    _res.nscount = 1;
+    dns = &_res.nsaddr_list[0];
+    dns->sin_family = AF_INET;
+    dns->sin_port = htons(53);
+    dns->sin_addr.s_addr = in_addr.s_addr;
+
+    return 0;
+}
 
 int tcptun_find_free_pair(struct pair *pair_set, unsigned int pair_count)
 {

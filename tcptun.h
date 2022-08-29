@@ -16,6 +16,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <resolv.h>
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
@@ -45,6 +46,7 @@ struct pair {
     uint64_t outbytes;	/* Tally of outgoing bytes */
 };
 
+extern int tcptun_set_dns(const char *addr);
 extern int tcptun_find_free_pair(struct pair *pair_set,
                                  unsigned int pair_count);
 extern void tcptun_terminate_pair(struct pair *pair);

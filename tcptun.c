@@ -26,6 +26,7 @@ static const struct option long_options[] = {
     { "inport", required_argument, 0, 'I', },
     { "outport", required_argument, 0, 'O', },
     { "outhost", required_argument, 0, 'H', },
+    { "dns", required_argument, 0, 'n', },
     { 0, 0, 0, 0, },
 };
 
@@ -38,7 +39,8 @@ static void print_help(int argc, char **argv)
             "  --debug,-D      debug mode (no ncurses)\n"
             "  --inport,-I     incoming port\n"
             "  --outport,-O    outgoing port\n"
-            "  --outhost,-H    outgoing host\n");
+            "  --outhost,-H    outgoing host\n"
+            "  --dns,-n        DNS server address\n");
 }
 
 static void sighandler(int signal)
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
 
     while (1) {
         int option_index = 0;
-        int c = getopt_long(argc, argv, "hdDI:O:H:",
+        int c = getopt_long(argc, argv, "hdDI:O:H:n:",
                             long_options, &option_index);
         if (c == -1)
             break;
@@ -87,6 +89,13 @@ int main(int argc, char **argv)
             break;
         case 'H':
             strncpy(outhost, optarg, sizeof(outhost) - 1);
+            break;
+        case 'n':
+            rval = tcptun_set_dns(optarg);
+            if (rval != 0) {
+                fprintf(stderr, "Invalid DNS server address '%s'!\n", optarg);
+                exit(EXIT_FAILURE);
+            }
             break;
         case '?':
         default:
